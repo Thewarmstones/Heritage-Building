@@ -1,0 +1,2246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>龙象塔 Viewpoint Explorer</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --bg-soft: #0d182a;
+      --panel: rgba(10, 21, 37, 0.92);
+      --panel-2: rgba(13, 24, 42, 0.94);
+      --line: rgba(148, 163, 184, 0.18);
+      --line-strong: rgba(148, 163, 184, 0.34);
+      --text: #ecf2ff;
+      --muted: #9db0ca;
+      --muted-2: #71839f;
+      --accent: #7dd3fc;
+      --success: #34d399;
+      --warn: #f59e0b;
+      --danger: #f87171;
+      --shadow: 0 18px 46px rgba(0, 0, 0, 0.35);
+      --radius: 18px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.1), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(167, 139, 250, 0.1), transparent 28%),
+        linear-gradient(180deg, #07111f 0%, #091625 45%, #06101b 100%);
+      color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+      overflow: hidden;
+    }
+
+    body {
+      padding: 14px;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 420px minmax(680px, 1fr);
+      gap: 14px;
+      width: 100%;
+      height: calc(100vh - 28px);
+    }
+
+    .sidebar, .workspace {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(14, 26, 45, 0.98), rgba(8, 17, 30, 0.94));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent 18%);
+      pointer-events: none;
+    }
+
+    .hero {
+      padding: 22px 22px 18px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: #b8c9e6;
+      background: rgba(125, 211, 252, 0.09);
+      border: 1px solid rgba(125, 211, 252, 0.16);
+    }
+
+    .hero h1 {
+      margin: 14px 0 8px;
+      font-size: 28px;
+      line-height: 1.1;
+      letter-spacing: 0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .site-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(148, 163, 184, 0.07);
+      color: #d7e4f7;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .tag.soft {
+      color: var(--muted);
+      background: rgba(148, 163, 184, 0.05);
+    }
+
+    .controls {
+      padding: 16px 16px 14px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 16px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0.01em;
+      font-weight: 650;
+    }
+
+    .panel-meta,
+    .toolbar.compact {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .segmented button,
+    .toolbar button,
+    .label-button {
+      appearance: none;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(148, 163, 184, 0.06);
+      color: #d8e7fa;
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .segmented button:hover,
+    .toolbar button:hover,
+    .label-button:hover {
+      border-color: rgba(125, 211, 252, 0.34);
+      background: rgba(125, 211, 252, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .segmented button.active {
+      background: linear-gradient(180deg, rgba(125, 211, 252, 0.22), rgba(59, 130, 246, 0.18));
+      border-color: rgba(125, 211, 252, 0.4);
+      box-shadow: 0 8px 18px rgba(29, 78, 216, 0.18) inset;
+    }
+
+    .toolbar {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(148, 163, 184, 0.05);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .switch input {
+      accent-color: #7dd3fc;
+      margin: 0;
+    }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .step {
+      min-width: 0;
+      padding: 10px 10px 11px;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.13);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .step .num {
+      display: inline-flex;
+      width: 22px;
+      height: 22px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: rgba(125, 211, 252, 0.1);
+      color: #d9f2ff;
+      font-size: 11px;
+      margin-bottom: 8px;
+      border: 1px solid rgba(125, 211, 252, 0.2);
+    }
+
+    .step strong {
+      display: block;
+      font-size: 12px;
+      line-height: 1.35;
+      margin-bottom: 4px;
+    }
+
+    .step span {
+      display: block;
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--muted-2);
+    }
+
+    .status-bar {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.16);
+      color: #c5fae6;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .scatter-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    #scatterPlot {
+      width: 100%;
+      height: min(46vh, 420px);
+      display: block;
+      margin-top: 8px;
+      background:
+        radial-gradient(circle at center, rgba(125,211,252,0.04), transparent 48%),
+        linear-gradient(180deg, rgba(255,255,255,0.02), transparent 35%);
+      border-top: 1px solid rgba(148, 163, 184, 0.08);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 12px 16px 16px;
+      overflow: auto;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      background: rgba(255,255,255,0.02);
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .legend-item:hover,
+    .legend-item.selected {
+      background: rgba(125, 211, 252, 0.08);
+      border-color: rgba(125, 211, 252, 0.26);
+      transform: translateY(-1px);
+    }
+
+    .legend-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .legend-label {
+      min-width: 0;
+    }
+
+    .legend-label strong {
+      display: block;
+      font-size: 12px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .legend-label span {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .color-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.03);
+      flex: 0 0 auto;
+    }
+
+    .legend-count {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      min-width: 0;
+    }
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: minmax(480px, 1.45fr) minmax(320px, 0.85fr);
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .spatial-panel,
+    .detail-panel,
+    .cluster-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    #spatialCanvas {
+      width: 100%;
+      height: min(54vh, 500px);
+      display: block;
+      margin-top: 10px;
+      background:
+        radial-gradient(circle at center, rgba(125, 211, 252, 0.1), transparent 48%),
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0) 28%),
+        linear-gradient(180deg, rgba(6, 12, 22, 0.9), rgba(5, 11, 20, 1));
+      border-top: 1px solid rgba(148, 163, 184, 0.08);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+      cursor: grab;
+      touch-action: none;
+    }
+
+    #spatialCanvas:active {
+      cursor: grabbing;
+    }
+
+    .canvas-hint {
+      padding: 12px 16px 16px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .detail-panel {
+      padding-bottom: 8px;
+    }
+
+    #detailPanel {
+      padding: 12px 16px 18px;
+      overflow: auto;
+    }
+
+    .detail-hero {
+      display: grid;
+      grid-template-columns: 128px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .detail-hero img {
+      width: 128px;
+      height: 106px;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .detail-kicker {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .detail-hero h3 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.15;
+    }
+
+    .detail-hero p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .stat-card {
+      padding: 12px 12px 10px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .stat-card small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 7px;
+    }
+
+    .stat-card strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .metric-row {
+      margin-top: 12px;
+    }
+
+    .metric-row:first-child {
+      margin-top: 0;
+    }
+
+    .metric-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .metric-bar {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.12);
+      overflow: hidden;
+    }
+
+    .metric-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(125, 211, 252, 0.55), rgba(59, 130, 246, 0.85));
+    }
+
+    .metric-fill.affordance {
+      background: linear-gradient(90deg, rgba(52, 211, 153, 0.58), rgba(16, 185, 129, 0.9));
+    }
+
+    .metric-fill.uncertainty {
+      background: linear-gradient(90deg, rgba(251, 191, 36, 0.55), rgba(245, 158, 11, 0.9));
+    }
+
+    .metric-fill.cost {
+      background: linear-gradient(90deg, rgba(248, 113, 113, 0.55), rgba(244, 63, 94, 0.9));
+    }
+
+    .evidence-box {
+      margin-top: 16px;
+      padding: 14px 14px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .evidence-box h4,
+    .thumb-section h4,
+    .post-block h4 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      letter-spacing: 0.01em;
+    }
+
+    .evidence-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .evidence-item {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .evidence-item strong {
+      font-size: 12px;
+      color: #d9e7fb;
+    }
+
+    .evidence-item span {
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .thumb-section {
+      margin-top: 16px;
+    }
+
+    .thumb-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .thumb-card {
+      padding: 8px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+
+    .thumb-card:hover,
+    .thumb-card.selected {
+      transform: translateY(-1px);
+      background: rgba(125, 211, 252, 0.07);
+      border-color: rgba(125, 211, 252, 0.25);
+    }
+
+    .thumb-card img {
+      width: 100%;
+      height: 74px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      margin-bottom: 7px;
+    }
+
+    .thumb-card strong {
+      display: block;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    .thumb-card span {
+      display: block;
+      margin-top: 4px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .post-block {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .post-block p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      color: #d8e7fa;
+      background: rgba(148, 163, 184, 0.06);
+    }
+
+    .cluster-panel {
+      margin-top: 14px;
+      flex: 1;
+      min-height: 220px;
+    }
+
+    .cluster-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 12px 16px 16px;
+      overflow: auto;
+    }
+
+    .cluster-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      cursor: pointer;
+      transition: 180ms ease;
+    }
+
+    .cluster-card:hover,
+    .cluster-card.selected {
+      transform: translateY(-2px);
+      background: rgba(125, 211, 252, 0.06);
+      border-color: rgba(125, 211, 252, 0.28);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .cluster-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .cluster-name {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 16px;
+      font-weight: 650;
+    }
+
+    .cluster-sub {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .role-badge {
+      font-size: 11px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(148, 163, 184, 0.06);
+      white-space: nowrap;
+    }
+
+    .role-badge.canonical {
+      color: #c5f6e7;
+      border-color: rgba(52, 211, 153, 0.24);
+      background: rgba(52, 211, 153, 0.09);
+    }
+
+    .role-badge.undervalued {
+      color: #f9e7b4;
+      border-color: rgba(245, 158, 11, 0.24);
+      background: rgba(245, 158, 11, 0.09);
+    }
+
+    .role-badge.overhyped {
+      color: #ffd0d0;
+      border-color: rgba(248, 113, 113, 0.24);
+      background: rgba(248, 113, 113, 0.09);
+    }
+
+    .role-badge.balanced {
+      color: #d9e7fb;
+    }
+
+    .cluster-card p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.58;
+      min-height: 58px;
+    }
+
+    .mini-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .mini-tag {
+      font-size: 11px;
+      color: var(--muted);
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.06);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      z-index: 20;
+      max-width: 280px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(10, 21, 37, 0.96);
+      border: 1px solid rgba(125, 211, 252, 0.26);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.36);
+      color: #edf6ff;
+      font-size: 12px;
+      line-height: 1.5;
+      transform: translate(12px, 12px);
+      opacity: 1;
+      transition: opacity 120ms ease;
+    }
+
+    .tooltip.hidden {
+      opacity: 0;
+    }
+
+    .tooltip strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    @media (max-width: 1320px) {
+      html, body {
+        overflow: auto;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+
+      .top-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cluster-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .pipeline,
+      .cluster-grid,
+      .legend-grid,
+      .thumb-strip,
+      .stat-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-hero {
+        grid-template-columns: 1fr;
+      }
+
+      #scatterPlot,
+      #spatialCanvas {
+        height: 360px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="sidebar">
+      <div class="panel hero">
+        <div class="eyebrow">基础联动原型 · V1 双空间总览 + V3 证据解释</div>
+        <h1>龙象塔 Viewpoint Explorer</h1>
+        <p>把碎片化社交媒体帖子重组为可命名的 viewpoint candidates，并将图像/文本证据映射回建筑空间中的 camera 与 viewpoint。</p>
+        <div class="site-tags">
+          <span class="tag">社交帖子 → embedding → 2D 布局</span>
+          <span class="tag">聚类结果 → viewpoint 单元</span>
+          <span class="tag">3D camera / frustum 表达</span>
+          <span class="tag">左右基础联动</span>
+        </div>
+      </div>
+
+      <div class="panel controls">
+        <div class="panel-header" style="padding:0;">
+          <h2>Embedding 模态与布局控制</h2>
+          <div class="panel-meta">
+            <span class="tag soft" id="modalityBadge">当前：融合 embedding</span>
+          </div>
+        </div>
+
+        <div class="segmented" id="modalitySwitch">
+          <button class="active" data-mode="fusion">融合 embedding</button>
+          <button data-mode="image">图像 embedding</button>
+          <button data-mode="text">文本 embedding</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <label class="switch">
+              <input type="checkbox" id="toggleHulls" checked />
+              显示聚类包络
+            </label>
+            <button id="reprojectBtn">重新投影</button>
+          </div>
+          <div class="toolbar-right">
+            <button id="exportBtn">导出样例 JSON</button>
+            <label class="label-button" for="fileInput">导入你的 JSON</label>
+            <input id="fileInput" type="file" accept="application/json,.json" />
+          </div>
+        </div>
+
+        <div class="pipeline">
+          <div class="step">
+            <div class="num">1</div>
+            <strong>社交帖子输入</strong>
+            <span>图文帖子、标题、来源与互动指标</span>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <strong>图像 / 文本 embedding</strong>
+            <span>当前原型使用预计算示例向量，可替换成 CLIP / BGE</span>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <strong>PCA 二维布局</strong>
+            <span>根据当前模态实时投影为 2D 语义空间</span>
+          </div>
+          <div class="step">
+            <div class="num">4</div>
+            <strong>聚类结果展示</strong>
+            <span>把重复观看模式重组为 viewpoint candidates</span>
+          </div>
+          <div class="step">
+            <div class="num">5</div>
+            <strong>3D 空间锚定</strong>
+            <span>将 viewpoint / camera 映射回塔体周边位置与朝向</span>
+          </div>
+        </div>
+
+        <div class="status-bar" id="statusBar">已载入龙象塔示例数据。点击左侧点位或右侧 camera，可联动查看对应的 viewpoint 候选与证据解释。</div>
+      </div>
+
+      <div class="panel scatter-panel">
+        <div class="panel-header">
+          <h2>二维 embedding 空间</h2>
+          <div class="panel-meta">
+            <span class="tag soft" id="countBadge">0 posts / 0 clusters</span>
+          </div>
+        </div>
+        <svg id="scatterPlot" viewBox="0 0 560 420" aria-label="二维 embedding 布局"></svg>
+        <div id="legend" class="legend-grid"></div>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="top-grid">
+        <div class="panel spatial-panel">
+          <div class="panel-header">
+            <h2>三维空间中的 viewpoint / camera</h2>
+            <div class="toolbar compact">
+              <button id="focusSelectedBtn">聚焦所选</button>
+              <button id="reset3DBtn">重置视角</button>
+            </div>
+          </div>
+          <canvas id="spatialCanvas"></canvas>
+          <div class="canvas-hint">拖拽旋转、滚轮缩放；点击 camera 与左侧 embedding 点位双向联动。当前用简化塔体体块表达 viewpoint 的空间关系与朝向。</div>
+        </div>
+
+        <div class="panel detail-panel">
+          <div class="panel-header">
+            <h2>证据解释面板</h2>
+            <span id="selectionTag" class="tag soft">未选择</span>
+          </div>
+          <div id="detailPanel"></div>
+        </div>
+      </div>
+
+      <div class="panel cluster-panel">
+        <div class="panel-header">
+          <h2>聚类结果 / viewpoint candidates</h2>
+          <span id="clusterMeta" class="tag soft">聚类视角单元</span>
+        </div>
+        <div id="clusterCards" class="cluster-grid"></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="tooltip" class="tooltip hidden"></div>
+
+  <script>
+    const CLUSTER_DEFS = [
+      {
+        id: "front",
+        name: "正面全景",
+        semanticTag: "经典 / 稳妥",
+        description: "完整呈现塔身与中轴关系，是多数游客默认采用的 canonical viewpoint。",
+        color: "#64B5F6",
+        heat: 0.94,
+        affordance: 0.76,
+        cost: 2,
+        uncertainty: 0.14,
+        location: "主入口前广场",
+        anchor: "距塔体约 8–10 米的中轴线前场位置",
+        complement: "提供完整塔身与轴线秩序，是最稳妥的对照基线。",
+        whyImportant: "适合首次到访者快速建立建筑整体印象，也是后续比较其他视角的参考。",
+        visibleElements: ["塔身全貌", "基座", "中轴对称", "树线前景"],
+        recommendedFor: ["经典稳妥", "首次到访", "快速决策"],
+        imageProto: [0.93, 0.16, 0.10, 0.66, 0.22, 0.18, 0.14, 0.32],
+        textProto: [0.88, 0.22, 0.14, 0.60, 0.18, 0.24, 0.22, 0.42],
+        cameraCentroid: [0, -9.2, 1.7],
+        cameraTarget: [0, 0.5, 4.2],
+        captions: [
+          "站在前广场可以稳定拍到塔身全貌，几乎不会出错。",
+          "入口正对位置最经典，适合作为第一张到此一游。",
+          "构图对称、识别度高，但内容补充相对有限。",
+          "如果时间紧，这个角度最容易判断值不值得停留。"
+        ]
+      },
+      {
+        id: "side",
+        name: "侧面轮廓",
+        semanticTag: "低热 / 高价值",
+        description: "热度不高，但能揭示塔身层次、转角关系与立面轮廓，是典型被低估的 viewpoint。",
+        color: "#A78BFA",
+        heat: 0.46,
+        affordance: 0.88,
+        cost: 4,
+        uncertainty: 0.21,
+        location: "塔体东南侧步道",
+        anchor: "靠近侧向步道与转角树阵之间",
+        complement: "相比正面全景，它补充了体量层次与转角深度。",
+        whyImportant: "适合摄影与建筑观察用户，因为它把“平面正视”变成“体量关系”的观看方式。",
+        visibleElements: ["塔身层次", "转角关系", "屋檐退进", "侧向轮廓"],
+        recommendedFor: ["出片独特", "建筑观察", "中阶用户"],
+        imageProto: [0.28, 0.86, 0.16, 0.40, 0.58, 0.22, 0.33, 0.18],
+        textProto: [0.34, 0.79, 0.24, 0.35, 0.51, 0.28, 0.42, 0.26],
+        cameraCentroid: [8.2, 4.4, 1.7],
+        cameraTarget: [0.5, 0.2, 4.0],
+        captions: [
+          "侧面更能看出层层退台，照片会比正面更有体积感。",
+          "从转角看过去，塔身的边界和光影会更明显。",
+          "虽然不是热门点位，但建筑信息量其实更高。",
+          "如果想避开标准游客照，这一侧值得多走几步。"
+        ]
+      },
+      {
+        id: "entrance",
+        name: "入口关系",
+        semanticTag: "空间导向",
+        description: "突出入口与塔体、路径、人流之间的关系，适合作为到场导航与解释入口。",
+        color: "#34D399",
+        heat: 0.63,
+        affordance: 0.68,
+        cost: 1,
+        uncertainty: 0.18,
+        location: "入口门廊附近",
+        anchor: "靠近入口标识与门廊交接处",
+        complement: "比纯全景更能告诉用户“从哪里进入、如何接近建筑”。",
+        whyImportant: "入口关系视角把“看建筑”与“怎么走”联系起来，尤其适合到场快速决策场景。",
+        visibleElements: ["入口门廊", "导向路径", "人与建筑比例", "近景关系"],
+        recommendedFor: ["到场导航", "快速决策", "讲解开场"],
+        imageProto: [0.54, 0.20, 0.84, 0.36, 0.22, 0.71, 0.14, 0.48],
+        textProto: [0.49, 0.26, 0.80, 0.33, 0.28, 0.77, 0.20, 0.55],
+        cameraCentroid: [-4.6, -6.2, 1.65],
+        cameraTarget: [-0.2, -0.4, 3.4],
+        captions: [
+          "站在入口附近看塔，更容易理解游客是怎么接近它的。",
+          "这个角度虽然没有全景完整，但很适合现场判断路线。",
+          "入口、台阶和塔体关系会一起进入画面。",
+          "对于讲解和带队，这种视角比单纯美图更实用。"
+        ]
+      },
+      {
+        id: "detail",
+        name: "局部装饰",
+        semanticTag: "文化 / 细部",
+        description: "聚焦檐口、装饰、材质与细节符号，热度低但语义收益高。",
+        color: "#F59E0B",
+        heat: 0.38,
+        affordance: 0.87,
+        cost: 3,
+        uncertainty: 0.26,
+        location: "塔身北侧近景区",
+        anchor: "距塔体较近的停留点，视域更受遮挡",
+        complement: "相较热门全景，它补充“看到了哪些建筑语言与文化线索”。",
+        whyImportant: "当用户想理解建筑而不是只拍到建筑时，局部装饰提供更高解释密度。",
+        visibleElements: ["檐口装饰", "材质纹理", "局部雕饰", "构件关系"],
+        recommendedFor: ["理解建筑", "文化导向", "深度观看"],
+        imageProto: [0.18, 0.31, 0.27, 0.91, 0.79, 0.34, 0.60, 0.29],
+        textProto: [0.12, 0.38, 0.33, 0.84, 0.72, 0.40, 0.68, 0.35],
+        cameraCentroid: [2.4, 7.0, 1.55],
+        cameraTarget: [0.3, 1.8, 4.9],
+        captions: [
+          "贴近塔身拍细节，才能看到檐口和构件的层次。",
+          "这类图片不一定最火，但对理解建筑最有帮助。",
+          "如果只看全景，很容易忽略这些文化和工艺信息。",
+          "适合愿意多停留两三分钟的人。"
+        ]
+      },
+      {
+        id: "people",
+        name: "带人物构图",
+        semanticTag: "社交传播",
+        description: "强调人与塔的合照与尺度参照，传播热度较高，但建筑语义密度相对有限。",
+        color: "#F87171",
+        heat: 0.79,
+        affordance: 0.49,
+        cost: 2,
+        uncertainty: 0.12,
+        location: "西侧开阔拍照点",
+        anchor: "靠近游客常停留的开阔区域",
+        complement: "能快速提供人与建筑的比例与“打卡感”，但建筑信息较少。",
+        whyImportant: "这类视角常在社交媒体扩散，但也容易让系统误把“受欢迎”当成“更值得看”。",
+        visibleElements: ["人物前景", "塔体背景", "社交姿态", "尺度参照"],
+        recommendedFor: ["社交分享", "朋友合照", "快拍"],
+        imageProto: [0.58, 0.42, 0.18, 0.32, 0.83, 0.74, 0.51, 0.86],
+        textProto: [0.62, 0.36, 0.22, 0.28, 0.76, 0.68, 0.57, 0.91],
+        cameraCentroid: [-8.0, 3.6, 1.65],
+        cameraTarget: [-0.6, 0.6, 3.7],
+        captions: [
+          "很多人会在这里和塔合照，因为背景最容易识别。",
+          "带人物的照片传播效果最好，但建筑细节会被压缩。",
+          "如果目标是社交媒体分享，这个位置比较稳。",
+          "它很热门，但不一定最能帮助理解建筑本身。"
+        ]
+      }
+    ];
+
+    const OFFSETS = [
+      { pos: [-0.8, -0.5, 0.02], target: [0.12, 0.05, 0.1], img: [0.03, -0.01, 0.01, 0.00, 0.01, -0.02, 0.01, -0.01], text: [0.01, 0.02, 0.00, -0.01, 0.02, -0.01, 0.01, 0.01], social: 0.02, uncertainty: -0.02 },
+      { pos: [0.7, 0.3, 0.08], target: [-0.05, 0.08, 0.12], img: [-0.02, 0.02, -0.01, 0.01, -0.01, 0.01, 0.00, 0.02], text: [0.00, -0.01, 0.02, 0.01, -0.02, 0.02, -0.01, 0.00], social: -0.03, uncertainty: 0.01 },
+      { pos: [-0.3, 0.9, -0.06], target: [0.08, -0.03, 0.16], img: [0.02, 0.00, 0.03, -0.02, 0.00, 0.02, -0.01, 0.01], text: [-0.02, 0.01, -0.01, 0.00, 0.01, 0.01, 0.02, -0.02], social: 0.01, uncertainty: 0.04 },
+      { pos: [0.5, -0.7, 0.04], target: [-0.06, 0.02, -0.02], img: [-0.01, -0.02, 0.00, 0.02, -0.02, -0.01, 0.02, 0.00], text: [0.02, -0.02, 0.01, -0.02, 0.01, -0.01, 0.00, 0.02], social: -0.01, uncertainty: -0.01 }
+    ];
+
+    const roleCopy = {
+      canonical: "经典视角",
+      undervalued: "被低估",
+      overhyped: "高热 / 低义",
+      balanced: "均衡"
+    };
+
+    const state = {
+      data: null,
+      modality: "fusion",
+      selectedPostId: null,
+      selectedClusterId: null,
+      hoverPostId: null,
+      hoverClusterId: null,
+      showHulls: true,
+      projectionCache: {},
+      scatterScreen: {},
+      hitCameras: [],
+      view3D: {
+        yaw: 0.86,
+        pitch: 0.56,
+        distance: 25,
+        target: [0, 0.2, 3.6]
+      }
+    };
+
+    function clamp(v, min = 0, max = 1) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function addVec(a, b) {
+      return a.map((v, i) => v + b[i]);
+    }
+
+    function subVec(a, b) {
+      return a.map((v, i) => v - b[i]);
+    }
+
+    function scaleVec(v, s) {
+      return v.map((x) => x * s);
+    }
+
+    function dot(a, b) {
+      return a.reduce((sum, v, i) => sum + v * b[i], 0);
+    }
+
+    function cross(a, b) {
+      return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+      ];
+    }
+
+    function norm(v) {
+      return Math.sqrt(dot(v, v));
+    }
+
+    function normalize(v) {
+      const n = norm(v);
+      return n < 1e-9 ? v.map(() => 0) : v.map((x) => x / n);
+    }
+
+    function average(points) {
+      if (!points.length) return [0, 0, 0];
+      const d = points[0].length;
+      const sums = new Array(d).fill(0);
+      points.forEach((p) => p.forEach((v, i) => sums[i] += v));
+      return sums.map((v) => v / points.length);
+    }
+
+    function rgba(hex, alpha) {
+      const value = hex.replace("#", "");
+      const intVal = parseInt(value, 16);
+      const r = (intVal >> 16) & 255;
+      const g = (intVal >> 8) & 255;
+      const b = intVal & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function makeThumbnail(cluster, index) {
+      const accent = cluster.color;
+      const mood = index % 4;
+      const person = cluster.id === "people" ? "<circle cx='44' cy='72' r='7' fill='rgba(250,250,255,0.78)'/><rect x='39' y='79' width='10' height='18' rx='4' fill='rgba(250,250,255,0.72)'/>" : "";
+      const detail = cluster.id === "detail" ? `<path d='M83 44 h22 l8 8 v18 h-36 z' fill='rgba(255,255,255,0.22)' stroke='rgba(255,255,255,0.42)' stroke-width='1.2'/><path d='M87 55 h14' stroke='rgba(255,255,255,0.62)' stroke-width='2' stroke-linecap='round'/>` : "";
+      const svg = `
+        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'>
+          <defs>
+            <linearGradient id='g' x1='0' x2='1' y1='0' y2='1'>
+              <stop offset='0%' stop-color='${accent}' stop-opacity='0.95'/>
+              <stop offset='100%' stop-color='#081120' stop-opacity='1'/>
+            </linearGradient>
+          </defs>
+          <rect width='160' height='120' rx='18' fill='url(#g)'/>
+          <circle cx='126' cy='26' r='16' fill='rgba(255,255,255,0.18)'/>
+          <rect x='0' y='86' width='160' height='34' fill='rgba(4,10,18,0.34)'/>
+          <path d='M56 88 L72 42 L88 28 L104 42 L112 88 Z' fill='rgba(255,255,255,0.16)' stroke='rgba(255,255,255,0.55)' stroke-width='1.3'/>
+          <path d='M64 88 L78 54 L90 44 L98 54 L104 88' fill='none' stroke='rgba(255,255,255,0.72)' stroke-width='2' stroke-linecap='round'/>
+          <path d='M48 88 Q80 ${mood === 1 ? 74 : 80} 118 88' fill='none' stroke='rgba(255,255,255,0.24)' stroke-width='2'/>
+          <path d='M20 ${mood === 2 ? 76 : 82} L42 ${mood === 2 ? 72 : 80} L46 88 L16 88 Z' fill='rgba(255,255,255,0.16)'/>
+          ${person}
+          ${detail}
+        </svg>`;
+      return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+    }
+
+    function classifyCluster(cluster) {
+      if (cluster.heat >= 0.8 && cluster.affordance >= 0.7) return "canonical";
+      const gap = cluster.affordance - cluster.heat;
+      if (gap >= 0.18) return "undervalued";
+      if (gap <= -0.18) return "overhyped";
+      return "balanced";
+    }
+
+    function fusionEmbedding(imageEmbedding, textEmbedding) {
+      return imageEmbedding.map((v, i) => 0.58 * v + 0.42 * textEmbedding[i]);
+    }
+
+    function buildSampleData() {
+      const clusters = CLUSTER_DEFS.map((cluster) => ({
+        ...cluster,
+        role: classifyCluster(cluster)
+      }));
+      const posts = [];
+      clusters.forEach((cluster) => {
+        OFFSETS.forEach((offset, idx) => {
+          const imageEmbedding = cluster.imageProto.map((v, i) => clamp(v + offset.img[i], 0.02, 0.98));
+          const textEmbedding = cluster.textProto.map((v, i) => clamp(v + offset.text[i], 0.02, 0.98));
+          const fusion = fusionEmbedding(imageEmbedding, textEmbedding);
+          const position = addVec(cluster.cameraCentroid, offset.pos);
+          const target = addVec(cluster.cameraTarget, offset.target);
+          posts.push({
+            id: `${cluster.id}-${idx + 1}`,
+            clusterId: cluster.id,
+            title: `${cluster.name} #${idx + 1}`,
+            representative: idx === 0,
+            caption: cluster.captions[idx],
+            imageEmbedding,
+            textEmbedding,
+            fusionEmbedding: fusion,
+            camera: { position, target },
+            visibleElements: cluster.visibleElements,
+            social: clamp(cluster.heat + offset.social),
+            uncertainty: clamp(cluster.uncertainty + offset.uncertainty, 0.05, 0.45),
+            cost: cluster.cost,
+            thumbnail: makeThumbnail(cluster, idx),
+            source: `mock-social-${cluster.id}-${idx + 1}`
+          });
+        });
+      });
+      return {
+        site: "龙象塔",
+        summary: "示例数据用于演示 viewpoint 单元、embedding 布局、3D 空间表达与联动机制。",
+        clusters,
+        posts
+      };
+    }
+
+    function hydrateDataset(raw) {
+      const base = raw && raw.clusters && raw.posts ? raw : buildSampleData();
+      const clusterMap = new Map();
+      const clusters = (base.clusters || []).map((cluster, idx) => {
+        const fallback = CLUSTER_DEFS[idx % CLUSTER_DEFS.length];
+        const hydrated = {
+          ...fallback,
+          ...cluster,
+          id: cluster.id || fallback.id || `cluster-${idx + 1}`,
+          name: cluster.name || fallback.name || `视角 ${idx + 1}`,
+          color: cluster.color || fallback.color || ["#64B5F6", "#A78BFA", "#34D399", "#F59E0B", "#F87171"][idx % 5],
+          semanticTag: cluster.semanticTag || fallback.semanticTag || "视角候选",
+          heat: clamp(typeof cluster.heat === "number" ? cluster.heat : fallback.heat || 0.5),
+          affordance: clamp(typeof cluster.affordance === "number" ? cluster.affordance : fallback.affordance || 0.5),
+          cost: typeof cluster.cost === "number" ? cluster.cost : fallback.cost || 2,
+          uncertainty: clamp(typeof cluster.uncertainty === "number" ? cluster.uncertainty : fallback.uncertainty || 0.2, 0.04, 0.5),
+          visibleElements: Array.isArray(cluster.visibleElements) ? cluster.visibleElements : fallback.visibleElements || [],
+          recommendedFor: Array.isArray(cluster.recommendedFor) ? cluster.recommendedFor : fallback.recommendedFor || [],
+          description: cluster.description || fallback.description || "待补充说明",
+          whyImportant: cluster.whyImportant || fallback.whyImportant || "待补充说明",
+          complement: cluster.complement || fallback.complement || "待补充说明",
+          anchor: cluster.anchor || fallback.anchor || "待补充说明",
+          location: cluster.location || fallback.location || "未指定位置",
+          cameraCentroid: Array.isArray(cluster.cameraCentroid) ? cluster.cameraCentroid : fallback.cameraCentroid || [0, 0, 1.6],
+          cameraTarget: Array.isArray(cluster.cameraTarget) ? cluster.cameraTarget : fallback.cameraTarget || [0, 0, 4],
+          role: classifyCluster({
+            heat: typeof cluster.heat === "number" ? cluster.heat : fallback.heat || 0.5,
+            affordance: typeof cluster.affordance === "number" ? cluster.affordance : fallback.affordance || 0.5
+          })
+        };
+        clusterMap.set(hydrated.id, hydrated);
+        return hydrated;
+      });
+
+      const posts = (base.posts || []).map((post, idx) => {
+        const clusterId = post.clusterId || post.cluster || clusters[0]?.id;
+        const cluster = clusterMap.get(clusterId) || clusters[0];
+        const imageEmbedding = Array.isArray(post.imageEmbedding) ? post.imageEmbedding : cluster.imageProto || Array(8).fill(0.2 + idx * 0.01);
+        const textEmbedding = Array.isArray(post.textEmbedding) ? post.textEmbedding : cluster.textProto || Array(8).fill(0.3 + idx * 0.01);
+        const fusion = Array.isArray(post.fusionEmbedding) ? post.fusionEmbedding : fusionEmbedding(imageEmbedding, textEmbedding);
+        const position = Array.isArray(post.camera?.position) ? post.camera.position : addVec(cluster.cameraCentroid, [0, 0, 0]);
+        const target = Array.isArray(post.camera?.target) ? post.camera.target : addVec(cluster.cameraTarget, [0, 0, 0]);
+        return {
+          id: post.id || `post-${idx + 1}`,
+          clusterId,
+          title: post.title || `${cluster.name} #${idx + 1}`,
+          representative: !!post.representative || idx % 4 === 0,
+          caption: post.caption || cluster.description,
+          imageEmbedding,
+          textEmbedding,
+          fusionEmbedding: fusion,
+          camera: { position, target },
+          visibleElements: Array.isArray(post.visibleElements) ? post.visibleElements : cluster.visibleElements,
+          social: clamp(typeof post.social === "number" ? post.social : cluster.heat),
+          uncertainty: clamp(typeof post.uncertainty === "number" ? post.uncertainty : cluster.uncertainty, 0.05, 0.5),
+          cost: typeof post.cost === "number" ? post.cost : cluster.cost,
+          source: post.source || `imported-${idx + 1}`,
+          thumbnail: post.thumbnail || makeThumbnail(cluster, idx % 4)
+        };
+      });
+
+      clusters.forEach((cluster) => {
+        const members = posts.filter((post) => post.clusterId === cluster.id);
+        if (members.length) {
+          cluster.cameraCentroid = average(members.map((post) => post.camera.position));
+          cluster.cameraTarget = average(members.map((post) => post.camera.target));
+        }
+      });
+
+      return {
+        site: base.site || "龙象塔",
+        summary: base.summary || "示例数据",
+        clusters,
+        posts
+      };
+    }
+
+    function getCluster(clusterId) {
+      return state.data.clusters.find((cluster) => cluster.id === clusterId);
+    }
+
+    function getPost(postId) {
+      return state.data.posts.find((post) => post.id === postId);
+    }
+
+    function getClusterPosts(clusterId) {
+      return state.data.posts.filter((post) => post.clusterId === clusterId);
+    }
+
+    function matrixVectorMultiply(matrix, vector) {
+      return matrix.map((row) => row.reduce((sum, value, idx) => sum + value * vector[idx], 0));
+    }
+
+    function powerIteration(matrix, iterations = 70) {
+      let vector = Array.from({ length: matrix.length }, (_, i) => 1 / (i + 1));
+      vector = normalize(vector);
+      for (let i = 0; i < iterations; i += 1) {
+        const mv = matrixVectorMultiply(matrix, vector);
+        const mvNorm = norm(mv);
+        if (mvNorm < 1e-10) break;
+        vector = mv.map((value) => value / mvNorm);
+      }
+      const lambda = dot(vector, matrixVectorMultiply(matrix, vector));
+      return { vector, value: lambda };
+    }
+
+    function computePCA2D(vectors) {
+      if (!vectors.length) return [];
+      const d = vectors[0].length;
+      const mean = new Array(d).fill(0);
+      vectors.forEach((vector) => vector.forEach((value, idx) => { mean[idx] += value; }));
+      mean.forEach((_, idx) => { mean[idx] /= vectors.length; });
+
+      const centered = vectors.map((vector) => vector.map((value, idx) => value - mean[idx]));
+      const cov = Array.from({ length: d }, () => Array(d).fill(0));
+      centered.forEach((row) => {
+        for (let i = 0; i < d; i += 1) {
+          for (let j = 0; j < d; j += 1) {
+            cov[i][j] += row[i] * row[j] / Math.max(1, vectors.length - 1);
+          }
+        }
+      });
+
+      const comp1 = powerIteration(cov);
+      const cov2 = cov.map((row, i) => row.map((value, j) => value - comp1.value * comp1.vector[i] * comp1.vector[j]));
+      const comp2 = powerIteration(cov2);
+      let coordinates = centered.map((row) => [dot(row, comp1.vector), dot(row, comp2.vector)]);
+      const xs = coordinates.map((coord) => coord[0]);
+      const ys = coordinates.map((coord) => coord[1]);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      coordinates = coordinates.map(([x, y]) => [
+        (x - minX) / Math.max(maxX - minX, 1e-6),
+        (y - minY) / Math.max(maxY - minY, 1e-6)
+      ]);
+      return coordinates;
+    }
+
+    function getProjection(mode) {
+      if (state.projectionCache[mode]) return state.projectionCache[mode];
+      const vectors = state.data.posts.map((post) => {
+        if (mode === "image") return post.imageEmbedding;
+        if (mode === "text") return post.textEmbedding;
+        return post.fusionEmbedding;
+      });
+      const coords = computePCA2D(vectors);
+      state.projectionCache[mode] = coords;
+      return coords;
+    }
+
+    function createSvgElement(tag, attrs = {}) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+      return el;
+    }
+
+    function convexHull(points) {
+      if (points.length <= 2) return points.slice();
+      const sorted = points.slice().sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
+      const cross2D = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+      const lower = [];
+      sorted.forEach((point) => {
+        while (lower.length >= 2 && cross2D(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) lower.pop();
+        lower.push(point);
+      });
+      const upper = [];
+      sorted.slice().reverse().forEach((point) => {
+        while (upper.length >= 2 && cross2D(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) upper.pop();
+        upper.push(point);
+      });
+      upper.pop();
+      lower.pop();
+      return lower.concat(upper);
+    }
+
+    function showTooltip(x, y, html) {
+      const tooltip = document.getElementById("tooltip");
+      tooltip.innerHTML = html;
+      tooltip.classList.remove("hidden");
+      tooltip.style.left = `${x}px`;
+      tooltip.style.top = `${y}px`;
+    }
+
+    function hideTooltip() {
+      document.getElementById("tooltip").classList.add("hidden");
+    }
+
+    function setStatus(message, kind = "success") {
+      const bar = document.getElementById("statusBar");
+      bar.textContent = message;
+      const styles = {
+        success: {
+          background: "rgba(52, 211, 153, 0.08)",
+          border: "1px solid rgba(52, 211, 153, 0.16)",
+          color: "#c5fae6"
+        },
+        info: {
+          background: "rgba(125, 211, 252, 0.08)",
+          border: "1px solid rgba(125, 211, 252, 0.18)",
+          color: "#d8f3ff"
+        },
+        warn: {
+          background: "rgba(245, 158, 11, 0.08)",
+          border: "1px solid rgba(245, 158, 11, 0.18)",
+          color: "#f8e7ba"
+        }
+      };
+      const style = styles[kind] || styles.success;
+      bar.style.background = style.background;
+      bar.style.border = style.border;
+      bar.style.color = style.color;
+    }
+
+    function selectCluster(clusterId, preferredPostId = null) {
+      const cluster = getCluster(clusterId);
+      if (!cluster) return;
+      state.selectedClusterId = clusterId;
+      const members = getClusterPosts(clusterId);
+      const chosen = preferredPostId && members.some((post) => post.id === preferredPostId)
+        ? getPost(preferredPostId)
+        : members.find((post) => post.representative) || members[0];
+      state.selectedPostId = chosen?.id || null;
+      state.hoverClusterId = clusterId;
+      renderAll();
+    }
+
+    function selectPost(postId) {
+      const post = getPost(postId);
+      if (!post) return;
+      state.selectedPostId = postId;
+      state.selectedClusterId = post.clusterId;
+      state.hoverClusterId = post.clusterId;
+      renderAll();
+    }
+
+    function setHoverPost(postId) {
+      if (state.hoverPostId === postId) return;
+      state.hoverPostId = postId;
+      if (!postId) {
+        hideTooltip();
+      }
+      renderScatter();
+      renderSpatial();
+    }
+
+    function renderScatter() {
+      const svg = document.getElementById("scatterPlot");
+      const width = 560;
+      const height = 420;
+      const margin = { top: 26, right: 22, bottom: 24, left: 24 };
+      svg.innerHTML = "";
+      state.scatterScreen = {};
+      const coords = getProjection(state.modality);
+      const xs = coords.map((coord) => coord[0]);
+      const ys = coords.map((coord) => coord[1]);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const pad = 0.08;
+      const xScale = (v) => margin.left + ((v - minX + pad) / Math.max((maxX - minX) + 2 * pad, 1e-6)) * (width - margin.left - margin.right);
+      const yScale = (v) => height - margin.bottom - ((v - minY + pad) / Math.max((maxY - minY) + 2 * pad, 1e-6)) * (height - margin.top - margin.bottom);
+
+      for (let i = 0; i <= 5; i += 1) {
+        const gx = margin.left + ((width - margin.left - margin.right) / 5) * i;
+        const gy = margin.top + ((height - margin.top - margin.bottom) / 5) * i;
+        svg.appendChild(createSvgElement("line", { x1: gx, y1: margin.top, x2: gx, y2: height - margin.bottom, stroke: "rgba(148,163,184,0.10)", "stroke-width": 1 }));
+        svg.appendChild(createSvgElement("line", { x1: margin.left, y1: gy, x2: width - margin.right, y2: gy, stroke: "rgba(148,163,184,0.10)", "stroke-width": 1 }));
+      }
+
+      const title = createSvgElement("text", { x: margin.left, y: 18, fill: "rgba(157,176,202,0.88)", "font-size": 12 });
+      title.textContent = state.modality === "fusion" ? "PCA 投影 · 融合 embedding" : `PCA 投影 · ${state.modality === "image" ? "图像" : "文本"} embedding`;
+      svg.appendChild(title);
+
+      const points = state.data.posts.map((post, idx) => ({
+        ...post,
+        x: xScale(coords[idx][0]),
+        y: yScale(coords[idx][1])
+      }));
+
+      state.data.clusters.forEach((cluster) => {
+        const members = points.filter((point) => point.clusterId === cluster.id);
+        if (!members.length) return;
+
+        if (state.showHulls) {
+          const hull = convexHull(members);
+          const polygon = createSvgElement("polygon", {
+            points: hull.map((point) => `${point.x},${point.y}`).join(" "),
+            fill: rgba(cluster.color, state.selectedClusterId === cluster.id ? 0.18 : 0.09),
+            stroke: rgba(cluster.color, 0.7),
+            "stroke-width": state.selectedClusterId === cluster.id ? 2.1 : 1.2,
+            cursor: "pointer"
+          });
+          polygon.addEventListener("mouseenter", (event) => {
+            state.hoverClusterId = cluster.id;
+            const quality = roleCopy[cluster.role];
+            showTooltip(event.pageX, event.pageY, `<strong>${cluster.name}</strong>${quality} · ${members.length} posts<br/>热度 ${Math.round(cluster.heat * 100)} / 可供性 ${Math.round(cluster.affordance * 100)}`);
+            renderScatter();
+          });
+          polygon.addEventListener("mouseleave", () => {
+            state.hoverClusterId = null;
+            hideTooltip();
+            renderScatter();
+          });
+          polygon.addEventListener("mousemove", (event) => {
+            showTooltip(event.pageX, event.pageY, `<strong>${cluster.name}</strong>${roleCopy[cluster.role]} · ${members.length} posts<br/>${cluster.location}`);
+          });
+          polygon.addEventListener("click", () => selectCluster(cluster.id));
+          svg.appendChild(polygon);
+        }
+
+        const centroid = average(members.map((point) => [point.x, point.y]));
+        const labelWidth = Math.max(74, cluster.name.length * 14 + 18);
+        const labelGroup = createSvgElement("g", { cursor: "pointer" });
+        labelGroup.appendChild(createSvgElement("rect", {
+          x: centroid[0] - labelWidth / 2,
+          y: centroid[1] - 34,
+          width: labelWidth,
+          height: 22,
+          rx: 11,
+          fill: rgba(cluster.color, 0.18),
+          stroke: rgba(cluster.color, state.selectedClusterId === cluster.id ? 0.95 : 0.52),
+          "stroke-width": state.selectedClusterId === cluster.id ? 1.4 : 1
+        }));
+        const labelText = createSvgElement("text", {
+          x: centroid[0],
+          y: centroid[1] - 19,
+          fill: "#edf6ff",
+          "font-size": 11,
+          "text-anchor": "middle",
+          "font-weight": 600
+        });
+        labelText.textContent = cluster.name;
+        labelGroup.appendChild(labelText);
+        labelGroup.addEventListener("click", () => selectCluster(cluster.id));
+        svg.appendChild(labelGroup);
+      });
+
+      points.forEach((point) => {
+        state.scatterScreen[point.id] = { x: point.x, y: point.y };
+        const cluster = getCluster(point.clusterId);
+        const isSelected = point.id === state.selectedPostId;
+        const isClusterSelected = point.clusterId === state.selectedClusterId;
+        const isHovered = point.id === state.hoverPostId;
+        const circle = createSvgElement("circle", {
+          cx: point.x,
+          cy: point.y,
+          r: isSelected ? 8.5 : isHovered ? 7.2 : 5.4,
+          fill: cluster.color,
+          stroke: isSelected ? "#ffffff" : rgba(cluster.color, 0.9),
+          "stroke-width": isSelected ? 2.6 : 1.1,
+          opacity: isClusterSelected ? 1 : 0.78,
+          cursor: "pointer"
+        });
+        circle.addEventListener("mouseenter", (event) => {
+          setHoverPost(point.id);
+          showTooltip(event.pageX, event.pageY, `<strong>${cluster.name}</strong>${point.title}<br/>${point.caption}<br/>热度 ${Math.round(point.social * 100)} · 不确定性 ${Math.round(point.uncertainty * 100)}`);
+        });
+        circle.addEventListener("mousemove", (event) => {
+          showTooltip(event.pageX, event.pageY, `<strong>${cluster.name}</strong>${point.title}<br/>${point.caption}`);
+        });
+        circle.addEventListener("mouseleave", () => {
+          setHoverPost(null);
+        });
+        circle.addEventListener("click", () => selectPost(point.id));
+        svg.appendChild(circle);
+
+        if (isSelected) {
+          const ring = createSvgElement("circle", {
+            cx: point.x,
+            cy: point.y,
+            r: 12.5,
+            fill: "none",
+            stroke: rgba(cluster.color, 0.38),
+            "stroke-width": 3
+          });
+          svg.appendChild(ring);
+        }
+      });
+    }
+
+    function renderLegend() {
+      const legend = document.getElementById("legend");
+      legend.innerHTML = "";
+      state.data.clusters.forEach((cluster) => {
+        const count = getClusterPosts(cluster.id).length;
+        const div = document.createElement("div");
+        div.className = `legend-item ${state.selectedClusterId === cluster.id ? "selected" : ""}`;
+        div.innerHTML = `
+          <div class="legend-left">
+            <span class="color-dot" style="background:${cluster.color}"></span>
+            <div class="legend-label">
+              <strong>${cluster.name}</strong>
+              <span>${roleCopy[cluster.role]} · ${cluster.semanticTag}</span>
+            </div>
+          </div>
+          <div class="legend-count">${count} posts</div>
+        `;
+        div.addEventListener("click", () => selectCluster(cluster.id));
+        legend.appendChild(div);
+      });
+    }
+
+    function renderClusterCards() {
+      const wrap = document.getElementById("clusterCards");
+      wrap.innerHTML = "";
+      state.data.clusters.forEach((cluster) => {
+        const count = getClusterPosts(cluster.id).length;
+        const card = document.createElement("div");
+        card.className = `cluster-card ${state.selectedClusterId === cluster.id ? "selected" : ""}`;
+        card.innerHTML = `
+          <div class="cluster-head">
+            <div>
+              <div class="cluster-name">
+                <span class="color-dot" style="background:${cluster.color}"></span>
+                ${cluster.name}
+              </div>
+              <div class="cluster-sub">${cluster.location} · ${count} posts · ${cluster.semanticTag}</div>
+            </div>
+            <span class="role-badge ${cluster.role}">${roleCopy[cluster.role]}</span>
+          </div>
+          <p>${cluster.description}</p>
+          <div class="metric-row">
+            <div class="metric-head"><span>社会关注度</span><span>${Math.round(cluster.heat * 100)}</span></div>
+            <div class="metric-bar"><div class="metric-fill" style="width:${cluster.heat * 100}%"></div></div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-head"><span>空间语义收益</span><span>${Math.round(cluster.affordance * 100)}</span></div>
+            <div class="metric-bar"><div class="metric-fill affordance" style="width:${cluster.affordance * 100}%"></div></div>
+          </div>
+          <div class="mini-tags">
+            <span class="mini-tag">绕路 ${cluster.cost} 分钟</span>
+            <span class="mini-tag">不确定性 ${Math.round(cluster.uncertainty * 100)}%</span>
+            <span class="mini-tag">${cluster.visibleElements.slice(0, 2).join(" + ")}</span>
+          </div>
+        `;
+        card.addEventListener("click", () => selectCluster(cluster.id));
+        wrap.appendChild(card);
+      });
+      document.getElementById("clusterMeta").textContent = `${state.data.clusters.length} 个 viewpoint 候选`;
+    }
+
+    function renderDetailPanel() {
+      const panel = document.getElementById("detailPanel");
+      const post = getPost(state.selectedPostId) || state.data.posts[0];
+      const cluster = getCluster(post.clusterId);
+      const clusterPosts = getClusterPosts(cluster.id);
+      document.getElementById("selectionTag").textContent = `${cluster.name} · ${post.title}`;
+      panel.innerHTML = `
+        <div class="detail-hero">
+          <img src="${post.thumbnail}" alt="${cluster.name}" />
+          <div>
+            <div class="detail-kicker">当前联动对象 · ${roleCopy[cluster.role]}</div>
+            <h3>${cluster.name}</h3>
+            <p>${cluster.description}</p>
+            <div class="pill-row">
+              <span class="pill">${cluster.location}</span>
+              <span class="pill">${cluster.semanticTag}</span>
+              <span class="pill">绕路 ${cluster.cost} 分钟</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-card">
+            <small>代表帖子</small>
+            <strong>${post.title}</strong>
+          </div>
+          <div class="stat-card">
+            <small>可见建筑元素</small>
+            <strong>${cluster.visibleElements.length} 项</strong>
+          </div>
+        </div>
+
+        <div class="evidence-box">
+          <h4>面向决策的证据链</h4>
+          <div class="evidence-list">
+            <div class="evidence-item">
+              <strong>看到什么</strong>
+              <span>${cluster.visibleElements.join("、")}</span>
+            </div>
+            <div class="evidence-item">
+              <strong>为什么重要</strong>
+              <span>${cluster.whyImportant}</span>
+            </div>
+            <div class="evidence-item">
+              <strong>相较热门补充</strong>
+              <span>${cluster.complement}</span>
+            </div>
+            <div class="evidence-item">
+              <strong>空间锚定</strong>
+              <span>${cluster.anchor}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-row" style="margin-top:16px;">
+          <div class="metric-head"><span>社会关注度</span><span>${Math.round(cluster.heat * 100)}</span></div>
+          <div class="metric-bar"><div class="metric-fill" style="width:${cluster.heat * 100}%"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-head"><span>空间语义收益</span><span>${Math.round(cluster.affordance * 100)}</span></div>
+          <div class="metric-bar"><div class="metric-fill affordance" style="width:${cluster.affordance * 100}%"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-head"><span>访问成本</span><span>${cluster.cost} 分钟</span></div>
+          <div class="metric-bar"><div class="metric-fill cost" style="width:${clamp(cluster.cost / 6) * 100}%"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-head"><span>不确定性</span><span>${Math.round(cluster.uncertainty * 100)}%</span></div>
+          <div class="metric-bar"><div class="metric-fill uncertainty" style="width:${cluster.uncertainty * 100}%"></div></div>
+        </div>
+
+        <div class="thumb-section">
+          <h4>同一视角候选中的代表帖子</h4>
+          <div class="thumb-strip">
+            ${clusterPosts.slice(0, 3).map((item) => `
+              <div class="thumb-card ${item.id === post.id ? "selected" : ""}" data-post="${item.id}">
+                <img src="${item.thumbnail}" alt="${item.title}" />
+                <strong>${item.title}</strong>
+                <span>${Math.round(item.social * 100)} 热度 · ${Math.round(item.uncertainty * 100)}% 不确定性</span>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="post-block">
+          <h4>当前所选帖子文本</h4>
+          <p>${post.caption}</p>
+          <div class="pill-row">
+            ${cluster.recommendedFor.map((item) => `<span class="pill">${item}</span>`).join("")}
+            <span class="pill">来源 ${post.source}</span>
+          </div>
+        </div>
+      `;
+
+      panel.querySelectorAll(".thumb-card").forEach((card) => {
+        card.addEventListener("click", () => selectPost(card.dataset.post));
+      });
+    }
+
+    function resizeCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.round(rect.width * dpr));
+      const height = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      return { width: rect.width, height: rect.height, dpr };
+    }
+
+    function getViewerCamera(view) {
+      const { yaw, pitch, distance, target } = view;
+      const position = [
+        target[0] + distance * Math.cos(pitch) * Math.sin(yaw),
+        target[1] + distance * Math.cos(pitch) * Math.cos(yaw),
+        target[2] + distance * Math.sin(pitch)
+      ];
+      const forward = normalize(subVec(target, position));
+      let right = normalize(cross(forward, [0, 0, 1]));
+      if (norm(right) < 1e-5) right = normalize(cross(forward, [0, 1, 0]));
+      const up = normalize(cross(right, forward));
+      return { position, target, forward, right, up };
+    }
+
+    function projectPoint(point, camera, size) {
+      const relative = subVec(point, camera.position);
+      const x = dot(relative, camera.right);
+      const y = dot(relative, camera.up);
+      const z = dot(relative, camera.forward);
+      if (z <= 0.2) return null;
+      const focal = Math.min(size.width, size.height) * 0.95;
+      return {
+        x: size.width / 2 + (x * focal) / z,
+        y: size.height / 2 - (y * focal) / z,
+        z
+      };
+    }
+
+    function drawLine3D(ctx, a, b, camera, size, style) {
+      const p1 = projectPoint(a, camera, size);
+      const p2 = projectPoint(b, camera, size);
+      if (!p1 || !p2) return;
+      ctx.save();
+      ctx.strokeStyle = style.stroke || "rgba(255,255,255,0.3)";
+      ctx.lineWidth = style.width || 1;
+      if (style.dash) ctx.setLineDash(style.dash);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function boxVertices(center, size) {
+      const [cx, cy, cz] = center;
+      const [sx, sy, sz] = size.map((v) => v / 2);
+      return [
+        [cx - sx, cy - sy, cz - sz],
+        [cx + sx, cy - sy, cz - sz],
+        [cx + sx, cy + sy, cz - sz],
+        [cx - sx, cy + sy, cz - sz],
+        [cx - sx, cy - sy, cz + sz],
+        [cx + sx, cy - sy, cz + sz],
+        [cx + sx, cy + sy, cz + sz],
+        [cx - sx, cy + sy, cz + sz]
+      ];
+    }
+
+    function drawBox(ctx, box, camera, size) {
+      const vertices = boxVertices(box.center, box.size);
+      const faces = [
+        { indices: [4, 5, 6, 7], color: box.top },
+        { indices: [0, 1, 5, 4], color: box.sideA },
+        { indices: [1, 2, 6, 5], color: box.sideB },
+        { indices: [2, 3, 7, 6], color: box.sideA },
+        { indices: [3, 0, 4, 7], color: box.sideB }
+      ];
+      const projected = vertices.map((v) => projectPoint(v, camera, size));
+      const sortable = faces.map((face) => {
+        const pts = face.indices.map((i) => projected[i]).filter(Boolean);
+        if (pts.length !== 4) return null;
+        const avgZ = pts.reduce((sum, point) => sum + point.z, 0) / pts.length;
+        return { ...face, pts, avgZ };
+      }).filter(Boolean).sort((a, b) => b.avgZ - a.avgZ);
+
+      sortable.forEach((face) => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(face.pts[0].x, face.pts[0].y);
+        face.pts.slice(1).forEach((pt) => ctx.lineTo(pt.x, pt.y));
+        ctx.closePath();
+        ctx.fillStyle = face.color;
+        ctx.strokeStyle = "rgba(200, 220, 255, 0.18)";
+        ctx.lineWidth = 1;
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+
+    function drawFrustum(ctx, post, cluster, camera, size, emphasize = false) {
+      const origin = post.camera.position;
+      const target = post.camera.target;
+      const direction = normalize(subVec(target, origin));
+      let left = normalize(cross([0, 0, 1], direction));
+      if (norm(left) < 1e-5) left = normalize(cross([0, 1, 0], direction));
+      const up = normalize(cross(direction, left));
+      const far = addVec(origin, scaleVec(direction, 3.2));
+      const halfW = emphasize ? 0.95 : 0.75;
+      const halfH = emphasize ? 0.62 : 0.45;
+      const corners = [
+        addVec(addVec(far, scaleVec(left, -halfW)), scaleVec(up, halfH)),
+        addVec(addVec(far, scaleVec(left, halfW)), scaleVec(up, halfH)),
+        addVec(addVec(far, scaleVec(left, halfW)), scaleVec(up, -halfH)),
+        addVec(addVec(far, scaleVec(left, -halfW)), scaleVec(up, -halfH))
+      ];
+      const o2 = projectPoint(origin, camera, size);
+      const c2 = corners.map((corner) => projectPoint(corner, camera, size));
+      if (!o2 || c2.some((pt) => !pt)) return;
+      ctx.save();
+      ctx.strokeStyle = rgba(cluster.color, emphasize ? 0.9 : 0.45);
+      ctx.fillStyle = rgba(cluster.color, emphasize ? 0.14 : 0.08);
+      ctx.lineWidth = emphasize ? 1.8 : 1.2;
+      ctx.beginPath();
+      ctx.moveTo(c2[0].x, c2[0].y);
+      c2.slice(1).forEach((pt) => ctx.lineTo(pt.x, pt.y));
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      c2.forEach((pt) => {
+        ctx.beginPath();
+        ctx.moveTo(o2.x, o2.y);
+        ctx.lineTo(pt.x, pt.y);
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+
+    function renderSpatial() {
+      const canvas = document.getElementById("spatialCanvas");
+      const size = resizeCanvas(canvas);
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
+      ctx.clearRect(0, 0, size.width, size.height);
+      state.hitCameras = [];
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, size.height);
+      gradient.addColorStop(0, "rgba(13, 28, 49, 0.96)");
+      gradient.addColorStop(1, "rgba(4, 11, 20, 1)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size.width, size.height);
+
+      const camera = getViewerCamera(state.view3D);
+      for (let g = -12; g <= 12; g += 2) {
+        drawLine3D(ctx, [g, -12, 0], [g, 12, 0], camera, size, { stroke: "rgba(148,163,184,0.10)", width: 1 });
+        drawLine3D(ctx, [-12, g, 0], [12, g, 0], camera, size, { stroke: "rgba(148,163,184,0.10)", width: 1 });
+      }
+
+      const footprint = [[-6, -6, 0], [6, -6, 0], [6, 6, 0], [-6, 6, 0]];
+      const projectedFootprint = footprint.map((point) => projectPoint(point, camera, size)).filter(Boolean);
+      if (projectedFootprint.length === 4) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(projectedFootprint[0].x, projectedFootprint[0].y);
+        projectedFootprint.slice(1).forEach((pt) => ctx.lineTo(pt.x, pt.y));
+        ctx.closePath();
+        ctx.fillStyle = "rgba(125, 211, 252, 0.04)";
+        ctx.strokeStyle = "rgba(125, 211, 252, 0.12)";
+        ctx.lineWidth = 1.2;
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      const boxes = [
+        { center: [0, 0, 1.25], size: [4.8, 4.8, 2.5], top: "rgba(168, 207, 255, 0.14)", sideA: "rgba(74, 144, 226, 0.12)", sideB: "rgba(53, 88, 144, 0.18)" },
+        { center: [0, 0, 4.05], size: [3.6, 3.6, 2.0], top: "rgba(181, 218, 255, 0.16)", sideA: "rgba(78, 133, 209, 0.14)", sideB: "rgba(45, 71, 126, 0.22)" },
+        { center: [0, 0, 6.35], size: [2.6, 2.6, 1.7], top: "rgba(197, 228, 255, 0.18)", sideA: "rgba(91, 142, 220, 0.16)", sideB: "rgba(47, 77, 132, 0.22)" },
+        { center: [0, 0, 8.15], size: [1.6, 1.6, 1.2], top: "rgba(211, 236, 255, 0.20)", sideA: "rgba(100, 151, 229, 0.18)", sideB: "rgba(52, 82, 139, 0.24)" }
+      ];
+      boxes.forEach((box) => drawBox(ctx, box, camera, size));
+      drawLine3D(ctx, [0, 0, 8.75], [0, 0, 10.6], camera, size, { stroke: "rgba(229,241,255,0.75)", width: 1.6 });
+
+      const selectedCluster = getCluster(state.selectedClusterId);
+      const selectedPost = getPost(state.selectedPostId);
+
+      state.data.clusters.forEach((cluster) => {
+        const centroid = projectPoint(cluster.cameraCentroid, camera, size);
+        if (!centroid) return;
+        const active = cluster.id === state.selectedClusterId || cluster.id === state.hoverClusterId;
+        ctx.save();
+        ctx.fillStyle = rgba(cluster.color, active ? 0.95 : 0.55);
+        ctx.strokeStyle = active ? "#ffffff" : rgba(cluster.color, 0.4);
+        ctx.lineWidth = active ? 2 : 1.2;
+        ctx.beginPath();
+        ctx.moveTo(centroid.x, centroid.y - 8);
+        ctx.lineTo(centroid.x + 8, centroid.y);
+        ctx.lineTo(centroid.x, centroid.y + 8);
+        ctx.lineTo(centroid.x - 8, centroid.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = active ? "rgba(236,242,255,0.96)" : "rgba(157,176,202,0.85)";
+        ctx.font = active ? "600 12px Inter, PingFang SC, Microsoft YaHei, sans-serif" : "11px Inter, PingFang SC, Microsoft YaHei, sans-serif";
+        ctx.fillText(cluster.name, centroid.x + 11, centroid.y - 10);
+        ctx.restore();
+      });
+
+      state.data.posts.forEach((post) => {
+        const cluster = getCluster(post.clusterId);
+        const pos2 = projectPoint(post.camera.position, camera, size);
+        if (!pos2) return;
+        const isSelected = post.id === state.selectedPostId;
+        const isHovered = post.id === state.hoverPostId;
+        const clusterActive = post.clusterId === state.selectedClusterId;
+        if (clusterActive || isSelected) {
+          drawFrustum(ctx, post, cluster, camera, size, isSelected);
+        }
+        ctx.save();
+        ctx.globalAlpha = clusterActive || isSelected ? 1 : 0.42;
+        ctx.fillStyle = cluster.color;
+        ctx.strokeStyle = isSelected ? "#ffffff" : rgba(cluster.color, 0.8);
+        ctx.lineWidth = isSelected ? 2.4 : isHovered ? 1.9 : 1.2;
+        ctx.beginPath();
+        ctx.arc(pos2.x, pos2.y, isSelected ? 7.2 : isHovered ? 6.3 : 4.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        if (post.representative) {
+          ctx.beginPath();
+          ctx.arc(pos2.x, pos2.y, isSelected ? 11.8 : 8.8, 0, Math.PI * 2);
+          ctx.strokeStyle = rgba(cluster.color, isSelected ? 0.42 : 0.24);
+          ctx.lineWidth = 1.4;
+          ctx.stroke();
+        }
+        ctx.restore();
+        state.hitCameras.push({ x: pos2.x, y: pos2.y, r: isSelected ? 11 : 8, postId: post.id });
+      });
+
+      if (selectedCluster && selectedPost) {
+        const textY = size.height - 18;
+        ctx.save();
+        ctx.fillStyle = "rgba(235,242,255,0.95)";
+        ctx.font = "600 13px Inter, PingFang SC, Microsoft YaHei, sans-serif";
+        ctx.fillText(`当前聚焦：${selectedCluster.name}`, 18, textY - 18);
+        ctx.fillStyle = "rgba(157,176,202,0.88)";
+        ctx.font = "12px Inter, PingFang SC, Microsoft YaHei, sans-serif";
+        ctx.fillText(`camera ${selectedPost.id} · ${selectedCluster.location}`, 18, textY);
+        ctx.restore();
+      }
+    }
+
+    function renderSummary() {
+      document.getElementById("countBadge").textContent = `${state.data.posts.length} posts / ${state.data.clusters.length} clusters`;
+      const label = state.modality === "fusion" ? "融合 embedding" : state.modality === "image" ? "图像 embedding" : "文本 embedding";
+      document.getElementById("modalityBadge").textContent = `当前：${label}`;
+      document.querySelectorAll("#modalitySwitch button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.mode === state.modality);
+      });
+    }
+
+    function renderAll() {
+      renderSummary();
+      renderScatter();
+      renderLegend();
+      renderClusterCards();
+      renderDetailPanel();
+      renderSpatial();
+    }
+
+    function focusOnSelectedCluster() {
+      const cluster = getCluster(state.selectedClusterId);
+      if (!cluster) return;
+      state.view3D.target = cluster.cameraTarget.slice();
+      renderSpatial();
+      setStatus(`已聚焦 ${cluster.name} 的空间位置与朝向。`, "info");
+    }
+
+    function reset3DView() {
+      state.view3D = {
+        yaw: 0.86,
+        pitch: 0.56,
+        distance: 25,
+        target: [0, 0.2, 3.6]
+      };
+      renderSpatial();
+      setStatus("已重置三维视角。", "info");
+    }
+
+    function exportCurrentData() {
+      const blob = new Blob([JSON.stringify(state.data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "viewpoint_sample.json";
+      link.click();
+      URL.revokeObjectURL(url);
+      setStatus("已导出当前样例 JSON。你可以在自己的数据上补充 embeddings、camera 坐标与 cluster 属性。", "info");
+    }
+
+    function importData(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const payload = JSON.parse(reader.result);
+          state.data = hydrateDataset(payload);
+          state.projectionCache = {};
+          state.selectedClusterId = state.data.posts[0]?.clusterId || state.data.clusters[0]?.id || null;
+          state.selectedPostId = state.data.posts[0]?.id || null;
+          renderAll();
+          setStatus(`已导入 ${state.data.posts.length} 条帖子 / ${state.data.clusters.length} 个 clusters。`, "success");
+        } catch (error) {
+          console.error(error);
+          setStatus("导入失败：请检查 JSON 结构，至少包含 clusters 与 posts。", "warn");
+        }
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    function bindEvents() {
+      document.querySelectorAll("#modalitySwitch button").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.modality = button.dataset.mode;
+          renderAll();
+          const label = state.modality === "fusion" ? "融合" : state.modality === "image" ? "图像" : "文本";
+          setStatus(`已切换到 ${label} embedding 空间。左侧 PCA 布局已更新，右侧 3D 空间保持同一组 viewpoint 锚定。`, "info");
+        });
+      });
+
+      document.getElementById("toggleHulls").addEventListener("change", (event) => {
+        state.showHulls = event.target.checked;
+        renderScatter();
+      });
+
+      document.getElementById("reprojectBtn").addEventListener("click", () => {
+        delete state.projectionCache[state.modality];
+        renderScatter();
+        setStatus("已重新计算当前模态的 PCA 二维布局。", "info");
+      });
+
+      document.getElementById("exportBtn").addEventListener("click", exportCurrentData);
+      document.getElementById("fileInput").addEventListener("change", (event) => importData(event.target.files[0]));
+      document.getElementById("focusSelectedBtn").addEventListener("click", focusOnSelectedCluster);
+      document.getElementById("reset3DBtn").addEventListener("click", reset3DView);
+
+      const canvas = document.getElementById("spatialCanvas");
+      let dragging = false;
+      let last = { x: 0, y: 0 };
+      canvas.addEventListener("mousedown", (event) => {
+        dragging = true;
+        last = { x: event.clientX, y: event.clientY };
+      });
+      window.addEventListener("mouseup", () => {
+        dragging = false;
+      });
+      window.addEventListener("mousemove", (event) => {
+        if (dragging) {
+          const dx = event.clientX - last.x;
+          const dy = event.clientY - last.y;
+          last = { x: event.clientX, y: event.clientY };
+          state.view3D.yaw += dx * 0.008;
+          state.view3D.pitch = clamp(state.view3D.pitch - dy * 0.006, 0.18, 1.2);
+          renderSpatial();
+          return;
+        }
+      });
+      canvas.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        state.view3D.distance = clamp(state.view3D.distance + event.deltaY * 0.01, 15, 40);
+        renderSpatial();
+      }, { passive: false });
+
+      canvas.addEventListener("mousemove", (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const hit = state.hitCameras.find((item) => ((item.x - x) ** 2 + (item.y - y) ** 2) <= item.r ** 2);
+        if (hit) {
+          const post = getPost(hit.postId);
+          const cluster = getCluster(post.clusterId);
+          state.hoverPostId = post.id;
+          showTooltip(event.pageX, event.pageY, `<strong>${cluster.name}</strong>${post.title}<br/>${cluster.location}<br/>点击以同步左侧点位与解释面板`);
+          renderScatter();
+          renderSpatial();
+        } else if (!dragging) {
+          if (state.hoverPostId) {
+            state.hoverPostId = null;
+            renderScatter();
+            renderSpatial();
+          }
+          hideTooltip();
+        }
+      });
+
+      canvas.addEventListener("mouseleave", () => {
+        if (!dragging) {
+          state.hoverPostId = null;
+          hideTooltip();
+          renderScatter();
+          renderSpatial();
+        }
+      });
+
+      canvas.addEventListener("click", (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const hit = state.hitCameras.find((item) => ((item.x - x) ** 2 + (item.y - y) ** 2) <= item.r ** 2);
+        if (hit) {
+          selectPost(hit.postId);
+          const post = getPost(hit.postId);
+          const cluster = getCluster(post.clusterId);
+          setStatus(`已从 3D 空间选中 ${cluster.name} · ${post.title}，左侧 embedding 点位与下方聚类卡已同步。`, "info");
+        }
+      });
+
+      window.addEventListener("resize", () => renderSpatial());
+    }
+
+    function init() {
+      state.data = hydrateDataset(buildSampleData());
+      state.selectedClusterId = state.data.clusters[0].id;
+      state.selectedPostId = state.data.posts[0].id;
+      bindEvents();
+      renderAll();
+    }
+
+    init();
+  </script>
+</body>
+</html>

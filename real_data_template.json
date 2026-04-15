@@ -1,0 +1,47 @@
+{
+  "site": "你的建筑名称",
+  "summary": "一句话说明这个项目的数据来源与用途。",
+  "clusters": [
+    {
+      "id": "front",
+      "name": "正面全景",
+      "semanticTag": "经典 / 稳妥",
+      "description": "这个候选视角的简短介绍。",
+      "color": "#64B5F6",
+      "heat": 0.94,
+      "affordance": 0.76,
+      "cost": 2,
+      "uncertainty": 0.14,
+      "location": "主入口前广场",
+      "anchor": "中轴线前场",
+      "whyImportant": "为什么这个视角对游客或研究有价值。",
+      "complement": "相对热门视角，它补充了什么。",
+      "visibleElements": ["塔身全貌", "基座"],
+      "recommendedFor": ["首次到访"],
+      "cameraCentroid": [0, -9.2, 1.7],
+      "cameraTarget": [0, 0.5, 4.2]
+    }
+  ],
+  "posts": [
+    {
+      "id": "front-1",
+      "clusterId": "front",
+      "title": "帖子标题",
+      "representative": true,
+      "caption": "帖子文案或摘要",
+      "imageEmbedding": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+      "textEmbedding": [0.2, 0.1, 0.4, 0.3, 0.6, 0.5, 0.8, 0.7],
+      "fusionEmbedding": [0.14, 0.16, 0.34, 0.36, 0.54, 0.56, 0.74, 0.76],
+      "camera": {
+        "position": [0, -9.2, 1.7],
+        "target": [0, 0.5, 4.2]
+      },
+      "visibleElements": ["塔身全貌"],
+      "social": 0.95,
+      "uncertainty": 0.12,
+      "cost": 2,
+      "thumbnail": "可选：data:image/... 或 http(s) 图片 URL",
+      "source": "你的原始数据 ID"
+    }
+  ]
+}

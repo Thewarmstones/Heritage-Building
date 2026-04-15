@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Heritage Viewpoint Explorer · Product Demo</title>
+  <style>
+    :root {
+      --bg-0: #06101c;
+      --bg-1: #0a1526;
+      --bg-2: #10203a;
+      --panel: rgba(8, 17, 31, 0.82);
+      --panel-2: rgba(13, 24, 42, 0.9);
+      --line: rgba(148,163,184,0.16);
+      --line-strong: rgba(148,163,184,0.3);
+      --text: #edf4ff;
+      --muted: #9eb2cd;
+      --subtle: #7388a6;
+      --accent: #6ee7ff;
+      --accent-2: #60a5fa;
+      --success: #34d399;
+      --warn: #f59e0b;
+      --danger: #fb7185;
+      --shadow: 0 16px 42px rgba(0,0,0,0.34);
+      --radius: 20px;
+      --radius-sm: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; width:100%; height:100%; background: radial-gradient(circle at top left, rgba(110,231,255,0.10), transparent 24%), radial-gradient(circle at bottom right, rgba(96,165,250,0.12), transparent 26%), linear-gradient(180deg, #07111f 0%, #081625 45%, #06101b 100%); color: var(--text); font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif; }
+    body { overflow: hidden; }
+    .shell { display:grid; grid-template-rows: 72px 1fr; height:100vh; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:0 18px; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(6,13,24,0.78); backdrop-filter: blur(16px); }
+    .brand { display:flex; align-items:center; gap:14px; }
+    .logo { width:40px; height:40px; border-radius:14px; background: linear-gradient(180deg, rgba(110,231,255,0.18), rgba(96,165,250,0.18)); border:1px solid rgba(110,231,255,0.24); display:grid; place-items:center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); }
+    .brand h1 { margin:0; font-size:16px; }
+    .brand p { margin:2px 0 0; font-size:12px; color: var(--muted); }
+    .top-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .btn, .tab, .chip-toggle { appearance:none; border:1px solid rgba(148,163,184,0.18); background: rgba(255,255,255,0.04); color: #e4eefc; border-radius: 12px; padding: 10px 14px; font-size: 13px; cursor: pointer; transition: .18s ease; }
+    .btn:hover, .tab:hover, .chip-toggle:hover { transform: translateY(-1px); background: rgba(110,231,255,0.09); border-color: rgba(110,231,255,0.32); }
+    .btn.primary { background: linear-gradient(180deg, rgba(110,231,255,0.18), rgba(59,130,246,0.18)); border-color: rgba(110,231,255,0.32); }
+    .content { display:grid; grid-template-columns: 380px minmax(740px,1fr); gap:16px; padding:16px; min-height:0; }
+    .col, .main { display:flex; flex-direction:column; gap:16px; min-height:0; }
+    .panel { position:relative; overflow:hidden; min-height:0; border-radius: var(--radius); background: linear-gradient(180deg, rgba(12,22,38,0.98), rgba(7,14,25,0.94)); border:1px solid var(--line); box-shadow: var(--shadow); }
+    .panel::before { content:""; position:absolute; inset:0; background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent 18%); pointer-events:none; }
+    .panel-header { position:relative; z-index:1; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:16px 16px 0; }
+    .panel-header h2 { margin:0; font-size:15px; }
+    .subtext { color:var(--muted); font-size:12px; margin-top:4px; line-height:1.5; }
+    .badge, .tag, .metric-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; border:1px solid rgba(148,163,184,0.18); background: rgba(148,163,184,0.06); color:#d7e4f7; font-size:12px; }
+    .hero { padding:18px; }
+    .hero-grid { display:grid; grid-template-columns: 1.35fr 1fr; gap:14px; }
+    .hero-copy h3 { margin:10px 0 8px; font-size:26px; line-height:1.1; }
+    .hero-copy p { margin:0; color: var(--muted); font-size:14px; line-height:1.6; }
+    .tag-row, .kpi-row, .tab-row, .filter-row, .actions-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .tag-row { margin-top:14px; }
+    .kpi-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px; }
+    .kpi { border-radius:16px; padding:14px; background: rgba(255,255,255,0.03); border:1px solid rgba(148,163,184,0.12); }
+    .kpi small { color:var(--muted); display:block; margin-bottom:8px; }
+    .kpi strong { font-size:26px; display:block; }
+    .controls { padding:0 16px 16px; }
+    .tab.active { background: linear-gradient(180deg, rgba(110,231,255,0.18), rgba(59,130,246,0.18)); border-color: rgba(110,231,255,0.3); }
+    .scatter-wrap { padding:0 0 14px; }
+    #scatterPlot { width:100%; height:360px; display:block; margin-top:8px; border-top:1px solid rgba(148,163,184,0.08); border-bottom:1px solid rgba(148,163,184,0.08); background: radial-gradient(circle at center, rgba(110,231,255,0.05), transparent 48%); }
+    .cluster-list { display:grid; gap:10px; padding:0 16px 16px; overflow:auto; }
+    .cluster-card { padding:14px; border-radius:16px; border:1px solid rgba(148,163,184,0.14); background: rgba(255,255,255,0.03); cursor:pointer; transition:.18s ease; }
+    .cluster-card:hover, .cluster-card.active { transform: translateY(-1px); background: rgba(110,231,255,0.08); border-color: rgba(110,231,255,0.28); }
+    .cluster-head { display:flex; justify-content:space-between; gap:10px; }
+    .cluster-title { display:flex; align-items:center; gap:10px; font-size:15px; font-weight:650; }
+    .dot { width:12px; height:12px; border-radius:50%; box-shadow: 0 0 0 4px rgba(255,255,255,0.03); flex:0 0 auto; }
+    .cluster-desc, .cluster-sub { color:var(--muted); font-size:12px; line-height:1.55; margin-top:8px; }
+    .mini-metric { margin-top:10px; }
+    .metric-head { display:flex; justify-content:space-between; gap:10px; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .bar { width:100%; height:8px; border-radius:999px; background: rgba(148,163,184,0.12); overflow:hidden; }
+    .fill { height:100%; border-radius:inherit; background: linear-gradient(90deg, rgba(110,231,255,0.58), rgba(59,130,246,0.86)); }
+    .fill.green { background: linear-gradient(90deg, rgba(52,211,153,0.58), rgba(16,185,129,0.9)); }
+    .fill.orange { background: linear-gradient(90deg, rgba(245,158,11,0.55), rgba(249,115,22,0.9)); }
+    .main-grid { display:grid; grid-template-columns: minmax(460px,1.35fr) minmax(340px,0.95fr); gap:16px; min-height:0; }
+    .canvas-panel canvas { display:block; width:100%; height:min(56vh,560px); background: radial-gradient(circle at center, rgba(110,231,255,0.08), transparent 44%), linear-gradient(180deg, rgba(255,255,255,0.03), transparent 28%), linear-gradient(180deg, rgba(6,12,22,0.9), rgba(5,11,20,1)); border-top:1px solid rgba(148,163,184,0.08); border-bottom:1px solid rgba(148,163,184,0.08); cursor:grab; }
+    .canvas-hint { padding:12px 16px 16px; color:var(--muted); font-size:12px; }
+    .detail-scroll { padding:12px 16px 18px; overflow:auto; }
+    .hero-card { display:grid; grid-template-columns: 132px 1fr; gap:14px; }
+    .hero-thumb { width:132px; height:112px; border-radius:14px; border:1px solid rgba(148,163,184,0.16); background: rgba(255,255,255,0.03); object-fit:cover; }
+    .detail-kicker { color:var(--muted); font-size:12px; margin-bottom:6px; }
+    .detail-title { margin:0; font-size:22px; }
+    .detail-copy { margin-top:8px; color:var(--muted); font-size:13px; line-height:1.6; }
+    .section { margin-top:16px; padding:14px; border-radius:16px; background: rgba(255,255,255,0.03); border:1px solid rgba(148,163,184,0.12); }
+    .section h4 { margin:0 0 10px; font-size:13px; }
+    .evidence { display:grid; gap:10px; }
+    .evidence-item { display:grid; grid-template-columns: 84px 1fr; gap:10px; }
+    .evidence-item strong { font-size:12px; }
+    .evidence-item span, .mono { font-size:12px; color:var(--muted); line-height:1.6; }
+    .thumbs { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:10px; }
+    .thumb { padding:8px; border-radius:14px; background: rgba(255,255,255,0.03); border:1px solid rgba(148,163,184,0.12); cursor:pointer; }
+    .thumb.active { background: rgba(110,231,255,0.08); border-color: rgba(110,231,255,0.28); }
+    .thumb img { width:100%; height:74px; border-radius:10px; object-fit:cover; border:1px solid rgba(148,163,184,0.14); }
+    .thumb strong { display:block; margin-top:7px; font-size:11px; }
+    .thumb span { display:block; margin-top:4px; font-size:10px; color:var(--muted); }
+    .footer-panel { padding:14px 16px 16px; }
+    textarea { width:100%; min-height:140px; resize:vertical; border-radius:14px; padding:14px; border:1px solid rgba(148,163,184,0.18); background: rgba(255,255,255,0.04); color:var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; line-height:1.5; }
+    .status { margin-top:10px; padding:10px 12px; border-radius:12px; background: rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.18); color:#cdfce7; font-size:12px; }
+    .tooltip { position:fixed; pointer-events:none; z-index:10; max-width:280px; padding:10px 12px; border-radius:12px; background: rgba(10,21,37,0.96); border:1px solid rgba(110,231,255,0.22); box-shadow: 0 12px 28px rgba(0,0,0,0.38); color:#eef6ff; font-size:12px; line-height:1.5; transform: translate(12px,12px); opacity:1; transition: opacity .12s ease; }
+    .tooltip.hidden { opacity:0; }
+    @media (max-width: 1380px) { body { overflow:auto; } .content, .main-grid, .hero-grid { grid-template-columns:1fr; } .shell { height:auto; min-height:100vh; } }
+    @media (max-width: 900px) { .content { grid-template-columns:1fr; } .hero-card, .thumbs, .kpi-grid { grid-template-columns:1fr; } #scatterPlot, .canvas-panel canvas { height:360px; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">△</div>
+        <div>
+          <h1>Heritage Viewpoint Explorer</h1>
+          <p>High-fidelity local demo · Viewpoint discovery / evidence / spatial anchor</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="resetBtn">重置视图</button>
+        <button class="btn" id="loadSampleBtn">加载样例</button>
+        <button class="btn primary" id="importJsonBtn">导入 JSON</button>
+        <input id="fileInput" type="file" accept="application/json,.json" hidden />
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="col">
+        <div class="panel hero">
+          <div class="hero-grid">
+            <div class="hero-copy">
+              <span class="badge">Productized prototype · dual-space linked analysis</span>
+              <h3 id="siteTitle">龙象塔 Viewpoint Intelligence</h3>
+              <p id="siteSummary">把碎片化帖子、候选 viewpoint、camera 锚点和证据链放进一套可用于产品验证的交互界面。</p>
+              <div class="tag-row">
+                <span class="tag">多模态 embedding</span>
+                <span class="tag">viewpoint candidate 聚类</span>
+                <span class="tag">3D camera / frustum</span>
+                <span class="tag">证据解释</span>
+              </div>
+            </div>
+            <div class="kpi-grid">
+              <div class="kpi"><small>Posts</small><strong id="kpiPosts">0</strong></div>
+              <div class="kpi"><small>Clusters</small><strong id="kpiClusters">0</strong></div>
+              <div class="kpi"><small>Avg. Affordance</small><strong id="kpiAff">0</strong></div>
+              <div class="kpi"><small>Avg. Heat</small><strong id="kpiHeat">0</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel scatter-wrap">
+          <div class="panel-header">
+            <div>
+              <h2>Embedding / semantic map</h2>
+              <div class="subtext">切换不同模态，观察 viewpoint 在语义空间中的分布与聚类边界。</div>
+            </div>
+            <span class="badge" id="modeBadge">当前：fusion</span>
+          </div>
+          <div class="controls">
+            <div class="tab-row" id="modeTabs">
+              <button class="tab active" data-mode="fusion">Fusion</button>
+              <button class="tab" data-mode="image">Image</button>
+              <button class="tab" data-mode="text">Text</button>
+            </div>
+            <div class="filter-row" style="margin-top:10px;">
+              <button class="chip-toggle" id="toggleHullBtn">显示聚类包络</button>
+              <button class="chip-toggle" id="reprojectBtn">重新投影</button>
+            </div>
+          </div>
+          <svg id="scatterPlot" viewBox="0 0 560 360"></svg>
+        </div>
+
+        <div class="panel" style="display:flex;flex-direction:column;min-height:0;">
+          <div class="panel-header">
+            <div>
+              <h2>Viewpoint candidates</h2>
+              <div class="subtext">卡片化呈现聚类结果、热度 / 语义收益 / 访问成本。</div>
+            </div>
+            <span class="badge" id="clusterMeta">0 candidates</span>
+          </div>
+          <div class="cluster-list" id="clusterList"></div>
+        </div>
+      </section>
+
+      <section class="main">
+        <div class="main-grid">
+          <div class="panel canvas-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Spatial anchor / camera field</h2>
+                <div class="subtext">在空间中查看 viewpoint 与 camera 的锚定关系，支持旋转、缩放与点选联动。</div>
+              </div>
+              <div class="actions-row">
+                <button class="btn" id="focusBtn">聚焦所选</button>
+                <button class="btn" id="reset3dBtn">重置 3D</button>
+              </div>
+            </div>
+            <canvas id="spatialCanvas"></canvas>
+            <div class="canvas-hint">拖拽旋转、滚轮缩放；点击 camera 圆点可同步左侧语义点位与右侧证据面板。</div>
+          </div>
+
+          <div class="panel" style="display:flex;flex-direction:column;min-height:0;">
+            <div class="panel-header">
+              <div>
+                <h2>Evidence & decision panel</h2>
+                <div class="subtext">把“看到什么、为什么重要、与热门视角的差异”组织成可解释证据链。</div>
+              </div>
+              <span class="badge" id="selectionTag">未选择</span>
+            </div>
+            <div class="detail-scroll" id="detailPanel"></div>
+          </div>
+        </div>
+
+        <div class="panel footer-panel">
+          <div class="panel-header" style="padding:0 0 12px;">
+            <div>
+              <h2>Real JSON data adapter</h2>
+              <div class="subtext">把真实数据映射成 site / clusters / posts 结构后，直接替换样例数据即可。</div>
+            </div>
+          </div>
+          <textarea id="jsonGuide" readonly></textarea>
+          <div class="status" id="statusBar">已载入高保真样例数据。你现在看到的是更接近正式产品表达的一版本地 demo。</div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div id="tooltip" class="tooltip hidden"></div>
+
+  <script>
+    const sampleData = {
+      site: '龙象塔',
+      summary: '示例数据用于演示高保真视角发现产品，包括语义空间、证据链和 3D camera 锚定。',
+      clusters: [
+        { id:'front', name:'正面全景', semanticTag:'经典 / 稳妥', description:'完整呈现塔身与中轴关系，是 canonical viewpoint。', color:'#64B5F6', heat:0.94, affordance:0.76, cost:2, uncertainty:0.14, location:'主入口前广场', anchor:'中轴线前场', whyImportant:'适合首次到访者快速建立整体印象。', complement:'作为后续对比基线最稳定。', visibleElements:['塔身全貌','基座','中轴对称','树线前景'], recommendedFor:['经典稳妥','首次到访','快速决策'], cameraCentroid:[0,-9.2,1.7], cameraTarget:[0,0.5,4.2] },
+        { id:'side', name:'侧面轮廓', semanticTag:'低热 / 高价值', description:'揭示体量层次与转角关系，是典型被低估 viewpoint。', color:'#A78BFA', heat:0.46, affordance:0.88, cost:4, uncertainty:0.21, location:'东南侧步道', anchor:'转角树阵旁', whyImportant:'把平面正视转成体量关系观看。', complement:'相比正面，全景信息少但层次更丰富。', visibleElements:['塔身层次','转角关系','屋檐退进','侧向轮廓'], recommendedFor:['出片独特','建筑观察','中阶用户'], cameraCentroid:[8.2,4.4,1.7], cameraTarget:[0.5,0.2,4.0] },
+        { id:'entrance', name:'入口关系', semanticTag:'空间导向', description:'突出入口、路径与塔体之间的关系。', color:'#34D399', heat:0.63, affordance:0.68, cost:1, uncertainty:0.18, location:'入口门廊附近', anchor:'入口标识交接处', whyImportant:'把“看建筑”与“怎么走”联系起来。', complement:'相较全景更适合到场导航。', visibleElements:['入口门廊','导向路径','人与建筑比例','近景关系'], recommendedFor:['到场导航','快速决策','讲解开场'], cameraCentroid:[-4.6,-6.2,1.65], cameraTarget:[-0.2,-0.4,3.4] },
+        { id:'detail', name:'局部装饰', semanticTag:'文化 / 细部', description:'聚焦檐口、材质与细节符号，热度低但语义收益高。', color:'#F59E0B', heat:0.38, affordance:0.87, cost:3, uncertainty:0.26, location:'塔身北侧近景区', anchor:'近景停留点', whyImportant:'适合深入理解建筑语言与文化线索。', complement:'补充热门全景缺失的细部证据。', visibleElements:['檐口装饰','材质纹理','局部雕饰','构件关系'], recommendedFor:['理解建筑','文化导向','深度观看'], cameraCentroid:[2.4,7.0,1.55], cameraTarget:[0.3,1.8,4.9] },
+        { id:'people', name:'带人物构图', semanticTag:'社交传播', description:'传播热度高，但建筑语义密度相对有限。', color:'#F87171', heat:0.79, affordance:0.49, cost:2, uncertainty:0.12, location:'西侧开阔拍照点', anchor:'游客常停留区域', whyImportant:'适合理解“受欢迎”不等于“更值得看”。', complement:'提供人建筑比例，但建筑信息偏少。', visibleElements:['人物前景','塔体背景','社交姿态','尺度参照'], recommendedFor:['社交分享','朋友合照','快拍'], cameraCentroid:[-8.0,3.6,1.65], cameraTarget:[-0.6,0.6,3.7] }
+      ],
+      posts: []
+    };
+
+    const OFFSETS = [
+      { pos:[-0.8,-0.5,0.02], target:[0.12,0.05,0.1], img:[0.03,-0.01,0.01,0.00,0.01,-0.02,0.01,-0.01], text:[0.01,0.02,0.00,-0.01,0.02,-0.01,0.01,0.01], social:0.02, uncertainty:-0.02 },
+      { pos:[0.7,0.3,0.08], target:[-0.05,0.08,0.12], img:[-0.02,0.02,-0.01,0.01,-0.01,0.01,0.00,0.02], text:[0.00,-0.01,0.02,0.01,-0.02,0.02,-0.01,0.00], social:-0.03, uncertainty:0.01 },
+      { pos:[-0.3,0.9,-0.06], target:[0.08,-0.03,0.16], img:[0.02,0.00,0.03,-0.02,0.00,0.02,-0.01,0.01], text:[-0.02,0.01,-0.01,0.00,0.01,0.01,0.02,-0.02], social:0.01, uncertainty:0.04 },
+      { pos:[0.5,-0.7,0.04], target:[-0.06,0.02,-0.02], img:[-0.01,-0.02,0.00,0.02,-0.02,-0.01,0.02,0.00], text:[0.02,-0.02,0.01,-0.02,0.01,-0.01,0.00,0.02], social:-0.01, uncertainty:-0.01 }
+    ];
+
+    function makeThumb(cluster, idx) {
+      const accent = cluster.color;
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 120'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'><stop offset='0%' stop-color='${accent}' stop-opacity='0.95'/><stop offset='100%' stop-color='#081120' stop-opacity='1'/></linearGradient></defs><rect width='160' height='120' rx='18' fill='url(#g)'/><circle cx='126' cy='26' r='16' fill='rgba(255,255,255,0.18)'/><rect x='0' y='86' width='160' height='34' fill='rgba(4,10,18,0.34)'/><path d='M56 88 L72 42 L88 28 L104 42 L112 88 Z' fill='rgba(255,255,255,0.16)' stroke='rgba(255,255,255,0.55)' stroke-width='1.3'/><path d='M64 88 L78 54 L90 44 L98 54 L104 88' fill='none' stroke='rgba(255,255,255,0.72)' stroke-width='2' stroke-linecap='round'/></svg>`;
+      return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+    }
+    function clamp(v, min=0, max=1){ return Math.max(min, Math.min(max, v)); }
+    function addVec(a,b){ return a.map((v,i)=>v+b[i]); }
+    function subVec(a,b){ return a.map((v,i)=>v-b[i]); }
+    function scaleVec(v,s){ return v.map(x=>x*s); }
+    function dot(a,b){ return a.reduce((sum,v,i)=>sum+v*b[i],0); }
+    function cross(a,b){ return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
+    function norm(v){ return Math.sqrt(dot(v,v)); }
+    function normalize(v){ const n=norm(v); return n<1e-9 ? v.map(()=>0) : v.map(x=>x/n); }
+    function average(points){ if(!points.length) return [0,0,0]; const d = points[0].length; const sums = new Array(d).fill(0); points.forEach(p=>p.forEach((v,i)=>sums[i]+=v)); return sums.map(v=>v/points.length); }
+    function fusionEmbedding(imageEmbedding, textEmbedding){ return imageEmbedding.map((v,i)=>0.58*v + 0.42*textEmbedding[i]); }
+    function classifyCluster(c){ if(c.heat >= 0.8 && c.affordance >= 0.7) return '经典视角'; const gap = c.affordance - c.heat; if(gap >= 0.18) return '被低估'; if(gap <= -0.18) return '高热低义'; return '均衡'; }
+    function buildDataset(input){
+      const data = JSON.parse(JSON.stringify(input || sampleData));
+      if(!data.posts || !data.posts.length){
+        data.posts = [];
+        data.clusters.forEach(cluster=>{
+          const imageProto = [0.2,0.3,0.4,0.5,0.6,0.2,0.3,0.4].map((v,i)=>clamp(v + ((cluster.heat*0.6 + cluster.affordance*0.4) - 0.5) * 0.4 + i*0.01, 0.02, 0.98));
+          const textProto = [0.3,0.25,0.45,0.55,0.4,0.35,0.2,0.5].map((v,i)=>clamp(v + ((cluster.affordance*0.6 + cluster.uncertainty*0.2) - 0.4) * 0.3 + i*0.008, 0.02, 0.98));
+          OFFSETS.forEach((offset, idx)=>{
+            const imageEmbedding = imageProto.map((v,i)=>clamp(v + offset.img[i], 0.02, 0.98));
+            const textEmbedding = textProto.map((v,i)=>clamp(v + offset.text[i], 0.02, 0.98));
+            data.posts.push({
+              id:`${cluster.id}-${idx+1}`,
+              clusterId:cluster.id,
+              title:`${cluster.name} #${idx+1}`,
+              representative: idx===0,
+              caption:`${cluster.description} · ${cluster.visibleElements.slice(0,2).join(' / ')}`,
+              imageEmbedding,
+              textEmbedding,
+              fusionEmbedding:fusionEmbedding(imageEmbedding, textEmbedding),
+              camera:{ position:addVec(cluster.cameraCentroid, offset.pos), target:addVec(cluster.cameraTarget, offset.target) },
+              visibleElements:cluster.visibleElements,
+              social: clamp(cluster.heat + offset.social),
+              uncertainty: clamp(cluster.uncertainty + offset.uncertainty, 0.05, 0.45),
+              cost: cluster.cost,
+              thumbnail: makeThumb(cluster, idx),
+              source:`mock-${cluster.id}-${idx+1}`
+            });
+          });
+        });
+      }
+      data.clusters = data.clusters.map(c=>({ ...c, role: classifyCluster(c) }));
+      return data;
+    }
+
+    const state = { data: buildDataset(sampleData), selectedClusterId:null, selectedPostId:null, modality:'fusion', showHull:true, cache:{}, hoverPostId:null, scatterScreen:{}, hitCameras:[], view3D:{ yaw:0.86, pitch:0.56, distance:25, target:[0,0.2,3.6] } };
+
+    function getCluster(id){ return state.data.clusters.find(c=>c.id===id); }
+    function getPost(id){ return state.data.posts.find(p=>p.id===id); }
+    function getClusterPosts(id){ return state.data.posts.filter(p=>p.clusterId===id); }
+    function setStatus(msg, kind='success'){ const el=document.getElementById('statusBar'); el.textContent=msg; const map={ success:['rgba(52,211,153,0.08)','1px solid rgba(52,211,153,0.18)','#cdfce7'], info:['rgba(110,231,255,0.08)','1px solid rgba(110,231,255,0.18)','#dff9ff'], warn:['rgba(245,158,11,0.08)','1px solid rgba(245,158,11,0.18)','#fde7b4'] }; const s=map[kind]||map.success; el.style.background=s[0]; el.style.border=s[1]; el.style.color=s[2]; }
+    function matrixVectorMultiply(matrix, vector){ return matrix.map(row => row.reduce((sum,val,idx)=>sum + val * vector[idx], 0)); }
+    function powerIteration(matrix, iterations=60){ let vector = Array.from({length: matrix.length}, (_,i)=>1/(i+1)); vector = normalize(vector); for(let i=0;i<iterations;i++){ const mv=matrixVectorMultiply(matrix, vector); const mvNorm=norm(mv); if(mvNorm<1e-10) break; vector=mv.map(v=>v/mvNorm); } const lambda = dot(vector, matrixVectorMultiply(matrix, vector)); return { vector, value: lambda }; }
+    function computePCA2D(vectors){ if(!vectors.length) return []; const d=vectors[0].length; const mean=new Array(d).fill(0); vectors.forEach(vec=>vec.forEach((v,i)=>mean[i]+=v)); mean.forEach((_,i)=>mean[i]/=vectors.length); const centered=vectors.map(vec=>vec.map((v,i)=>v-mean[i])); const cov=Array.from({length:d},()=>Array(d).fill(0)); centered.forEach(row=>{ for(let i=0;i<d;i++) for(let j=0;j<d;j++) cov[i][j]+=row[i]*row[j]/Math.max(1,vectors.length-1); }); const comp1=powerIteration(cov); const cov2=cov.map((row,i)=>row.map((value,j)=>value-comp1.value*comp1.vector[i]*comp1.vector[j])); const comp2=powerIteration(cov2); let coordinates = centered.map(row=>[dot(row, comp1.vector), dot(row, comp2.vector)]); const xs=coordinates.map(c=>c[0]), ys=coordinates.map(c=>c[1]); const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys); return coordinates.map(([x,y])=>[(x-minX)/Math.max(maxX-minX,1e-6), (y-minY)/Math.max(maxY-minY,1e-6)]); }
+    function projection(mode){ if(state.cache[mode]) return state.cache[mode]; const vectors=state.data.posts.map(post=> mode==='image' ? post.imageEmbedding : mode==='text' ? post.textEmbedding : post.fusionEmbedding); state.cache[mode]=computePCA2D(vectors); return state.cache[mode]; }
+    function rgba(hex, alpha){ const value = hex.replace('#',''); const intVal=parseInt(value,16); const r=(intVal>>16)&255, g=(intVal>>8)&255, b=intVal&255; return `rgba(${r}, ${g}, ${b}, ${alpha})`; }
+    function convexHull(points){ if(points.length<=2) return points.slice(); const sorted=points.slice().sort((a,b)=>a.x===b.x ? a.y-b.y : a.x-b.x); const cross2D=(o,a,b)=>(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x); const lower=[]; sorted.forEach(p=>{ while(lower.length>=2 && cross2D(lower[lower.length-2], lower[lower.length-1], p)<=0) lower.pop(); lower.push(p); }); const upper=[]; sorted.slice().reverse().forEach(p=>{ while(upper.length>=2 && cross2D(upper[upper.length-2], upper[upper.length-1], p)<=0) upper.pop(); upper.push(p); }); upper.pop(); lower.pop(); return lower.concat(upper); }
+    function showTooltip(x,y,html){ const tip=document.getElementById('tooltip'); tip.innerHTML=html; tip.classList.remove('hidden'); tip.style.left=`${x}px`; tip.style.top=`${y}px`; }
+    function hideTooltip(){ document.getElementById('tooltip').classList.add('hidden'); }
+    function renderSummary(){ document.getElementById('siteTitle').textContent = `${state.data.site} Viewpoint Intelligence`; document.getElementById('siteSummary').textContent = state.data.summary; document.getElementById('kpiPosts').textContent = String(state.data.posts.length); document.getElementById('kpiClusters').textContent = String(state.data.clusters.length); const avgA = state.data.clusters.reduce((s,c)=>s+c.affordance,0)/Math.max(state.data.clusters.length,1); const avgH = state.data.clusters.reduce((s,c)=>s+c.heat,0)/Math.max(state.data.clusters.length,1); document.getElementById('kpiAff').textContent = Math.round(avgA*100); document.getElementById('kpiHeat').textContent = Math.round(avgH*100); document.getElementById('modeBadge').textContent = `当前：${state.modality}`; document.getElementById('clusterMeta').textContent = `${state.data.clusters.length} candidates`; document.querySelectorAll('#modeTabs .tab').forEach(btn=>btn.classList.toggle('active', btn.dataset.mode===state.modality)); }
+    function renderScatter(){ const svg=document.getElementById('scatterPlot'); const width=560, height=360, margin={top:24,right:24,bottom:24,left:24}; svg.innerHTML=''; state.scatterScreen={}; const coords=projection(state.modality); const xs=coords.map(c=>c[0]), ys=coords.map(c=>c[1]); const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys); const pad=0.08; const xScale=v=>margin.left+((v-minX+pad)/Math.max((maxX-minX)+2*pad,1e-6))*(width-margin.left-margin.right); const yScale=v=>height-margin.bottom-((v-minY+pad)/Math.max((maxY-minY)+2*pad,1e-6))*(height-margin.top-margin.bottom);
+      for(let i=0;i<=5;i++){ const gx=margin.left+((width-margin.left-margin.right)/5)*i; const gy=margin.top+((height-margin.top-margin.bottom)/5)*i; svg.insertAdjacentHTML('beforeend', `<line x1="${gx}" y1="${margin.top}" x2="${gx}" y2="${height-margin.bottom}" stroke="rgba(148,163,184,0.10)" stroke-width="1"/><line x1="${margin.left}" y1="${gy}" x2="${width-margin.right}" y2="${gy}" stroke="rgba(148,163,184,0.10)" stroke-width="1"/>`); }
+      const points = state.data.posts.map((post,idx)=>({ ...post, x:xScale(coords[idx][0]), y:yScale(coords[idx][1]) }));
+      state.data.clusters.forEach(cluster=>{ const members=points.filter(p=>p.clusterId===cluster.id); if(!members.length) return; if(state.showHull){ const hull=convexHull(members); const poly=document.createElementNS('http://www.w3.org/2000/svg','polygon'); poly.setAttribute('points', hull.map(p=>`${p.x},${p.y}`).join(' ')); poly.setAttribute('fill', rgba(cluster.color, state.selectedClusterId===cluster.id ? 0.18 : 0.08)); poly.setAttribute('stroke', rgba(cluster.color, 0.68)); poly.setAttribute('stroke-width', state.selectedClusterId===cluster.id ? 2 : 1.2); poly.style.cursor='pointer'; poly.addEventListener('mouseenter', e=>showTooltip(e.pageX,e.pageY, `<strong>${cluster.name}</strong>${cluster.role} · ${members.length} posts<br/>热度 ${Math.round(cluster.heat*100)} / 可供性 ${Math.round(cluster.affordance*100)}`)); poly.addEventListener('mousemove', e=>showTooltip(e.pageX,e.pageY, `<strong>${cluster.name}</strong>${cluster.location}`)); poly.addEventListener('mouseleave', hideTooltip); poly.addEventListener('click', ()=>selectCluster(cluster.id)); svg.appendChild(poly);} const centroid=average(members.map(p=>[p.x,p.y])); svg.insertAdjacentHTML('beforeend', `<rect x="${centroid[0]-42}" y="${centroid[1]-33}" rx="10" width="84" height="22" fill="${rgba(cluster.color,0.14)}" stroke="${rgba(cluster.color,0.44)}"></rect><text x="${centroid[0]}" y="${centroid[1]-18}" fill="#edf6ff" font-size="11" text-anchor="middle" font-weight="600">${cluster.name}</text>`); });
+      points.forEach(point=>{ state.scatterScreen[point.id]={x:point.x,y:point.y}; const cluster=getCluster(point.clusterId); const selected=point.id===state.selectedPostId; const circle=document.createElementNS('http://www.w3.org/2000/svg','circle'); circle.setAttribute('cx', point.x); circle.setAttribute('cy', point.y); circle.setAttribute('r', selected ? 8.5 : 5.6); circle.setAttribute('fill', cluster.color); circle.setAttribute('stroke', selected ? '#fff' : rgba(cluster.color,0.85)); circle.setAttribute('stroke-width', selected ? 2.5 : 1.2); circle.style.cursor='pointer'; circle.addEventListener('mouseenter', e=>showTooltip(e.pageX,e.pageY, `<strong>${cluster.name}</strong>${point.title}<br/>${point.caption}`)); circle.addEventListener('mousemove', e=>showTooltip(e.pageX,e.pageY, `<strong>${cluster.name}</strong>${point.title}<br/>热度 ${Math.round(point.social*100)} · 不确定性 ${Math.round(point.uncertainty*100)}`)); circle.addEventListener('mouseleave', hideTooltip); circle.addEventListener('click', ()=>selectPost(point.id)); svg.appendChild(circle); }); }
+    function renderClusterCards(){ const wrap=document.getElementById('clusterList'); wrap.innerHTML=''; state.data.clusters.forEach(cluster=>{ const count=getClusterPosts(cluster.id).length; const div=document.createElement('div'); div.className=`cluster-card ${state.selectedClusterId===cluster.id ? 'active' : ''}`; div.innerHTML=`<div class="cluster-head"><div><div class="cluster-title"><span class="dot" style="background:${cluster.color}"></span>${cluster.name}</div><div class="cluster-sub">${cluster.location} · ${count} posts · ${cluster.semanticTag}</div></div><span class="metric-badge">${cluster.role}</span></div><div class="cluster-desc">${cluster.description}</div><div class="mini-metric"><div class="metric-head"><span>社会关注度</span><span>${Math.round(cluster.heat*100)}</span></div><div class="bar"><div class="fill" style="width:${cluster.heat*100}%"></div></div></div><div class="mini-metric"><div class="metric-head"><span>空间语义收益</span><span>${Math.round(cluster.affordance*100)}</span></div><div class="bar"><div class="fill green" style="width:${cluster.affordance*100}%"></div></div></div><div class="mini-metric"><div class="metric-head"><span>访问成本</span><span>${cluster.cost} 分钟</span></div><div class="bar"><div class="fill orange" style="width:${Math.min(cluster.cost/6,1)*100}%"></div></div></div>`; div.onclick=()=>selectCluster(cluster.id); wrap.appendChild(div); }); }
+    function renderDetail(){ const post=getPost(state.selectedPostId) || state.data.posts[0]; const cluster=getCluster(post.clusterId); const clusterPosts=getClusterPosts(cluster.id); document.getElementById('selectionTag').textContent=`${cluster.name} · ${post.title}`; document.getElementById('detailPanel').innerHTML=`<div class="hero-card"><img class="hero-thumb" src="${post.thumbnail}" alt="${cluster.name}"/><div><div class="detail-kicker">当前联动对象 · ${cluster.role}</div><h3 class="detail-title">${cluster.name}</h3><div class="detail-copy">${cluster.description}</div><div class="tag-row" style="margin-top:10px;"><span class="tag">${cluster.location}</span><span class="tag">${cluster.semanticTag}</span><span class="tag">绕路 ${cluster.cost} 分钟</span></div></div></div><div class="section"><h4>证据链</h4><div class="evidence"><div class="evidence-item"><strong>看到什么</strong><span>${cluster.visibleElements.join('、')}</span></div><div class="evidence-item"><strong>为什么重要</strong><span>${cluster.whyImportant}</span></div><div class="evidence-item"><strong>补充什么</strong><span>${cluster.complement}</span></div><div class="evidence-item"><strong>空间锚定</strong><span>${cluster.anchor}</span></div></div></div><div class="section"><h4>指标解释</h4><div class="mini-metric"><div class="metric-head"><span>社会关注度</span><span>${Math.round(cluster.heat*100)}</span></div><div class="bar"><div class="fill" style="width:${cluster.heat*100}%"></div></div></div><div class="mini-metric"><div class="metric-head"><span>空间语义收益</span><span>${Math.round(cluster.affordance*100)}</span></div><div class="bar"><div class="fill green" style="width:${cluster.affordance*100}%"></div></div></div><div class="mini-metric"><div class="metric-head"><span>不确定性</span><span>${Math.round(cluster.uncertainty*100)}%</span></div><div class="bar"><div class="fill orange" style="width:${cluster.uncertainty*100}%"></div></div></div></div><div class="section"><h4>同一候选中的代表帖子</h4><div class="thumbs">${clusterPosts.slice(0,3).map(item=>`<div class="thumb ${item.id===post.id ? 'active' : ''}" data-post="${item.id}"><img src="${item.thumbnail}" alt="${item.title}"/><strong>${item.title}</strong><span>${Math.round(item.social*100)} 热度 · ${Math.round(item.uncertainty*100)}% 不确定性</span></div>`).join('')}</div></div><div class="section"><h4>当前帖子文本</h4><div class="mono">${post.caption}</div><div class="tag-row" style="margin-top:10px;">${cluster.recommendedFor.map(item=>`<span class="tag">${item}</span>`).join('')}<span class="tag">来源 ${post.source}</span></div></div>`; document.querySelectorAll('.thumb').forEach(el=>el.onclick=()=>selectPost(el.dataset.post)); }
+    function resizeCanvas(canvas){ const rect=canvas.getBoundingClientRect(); const dpr=window.devicePixelRatio || 1; const width=Math.max(1, Math.round(rect.width*dpr)); const height=Math.max(1, Math.round(rect.height*dpr)); if(canvas.width!==width || canvas.height!==height){ canvas.width=width; canvas.height=height; } return { width:rect.width, height:rect.height, dpr }; }
+    function getViewerCamera(view){ const {yaw,pitch,distance,target}=view; const position=[ target[0]+distance*Math.cos(pitch)*Math.sin(yaw), target[1]+distance*Math.cos(pitch)*Math.cos(yaw), target[2]+distance*Math.sin(pitch) ]; const forward=normalize(subVec(target, position)); let right=normalize(cross(forward,[0,0,1])); if(norm(right)<1e-5) right=normalize(cross(forward,[0,1,0])); const up=normalize(cross(right, forward)); return { position,target,forward,right,up }; }
+    function projectPoint(point,camera,size){ const relative=subVec(point,camera.position); const x=dot(relative,camera.right), y=dot(relative,camera.up), z=dot(relative,camera.forward); if(z<=0.2) return null; const focal=Math.min(size.width,size.height)*0.95; return { x:size.width/2 + (x*focal)/z, y:size.height/2 - (y*focal)/z, z }; }
+    function drawLine3D(ctx,a,b,camera,size,style){ const p1=projectPoint(a,camera,size), p2=projectPoint(b,camera,size); if(!p1 || !p2) return; ctx.save(); ctx.strokeStyle=style.stroke||'rgba(255,255,255,0.3)'; ctx.lineWidth=style.width||1; ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke(); ctx.restore(); }
+    function boxVertices(center,size){ const [cx,cy,cz]=center; const [sx,sy,sz]=size.map(v=>v/2); return [[cx-sx,cy-sy,cz-sz],[cx+sx,cy-sy,cz-sz],[cx+sx,cy+sy,cz-sz],[cx-sx,cy+sy,cz-sz],[cx-sx,cy-sy,cz+sz],[cx+sx,cy-sy,cz+sz],[cx+sx,cy+sy,cz+sz],[cx-sx,cy+sy,cz+sz]]; }
+    function drawBox(ctx,box,camera,size){ const vertices=boxVertices(box.center, box.size); const faces=[ {indices:[4,5,6,7], color:box.top}, {indices:[0,1,5,4], color:box.sideA}, {indices:[1,2,6,5], color:box.sideB}, {indices:[2,3,7,6], color:box.sideA}, {indices:[3,0,4,7], color:box.sideB} ]; const projected=vertices.map(v=>projectPoint(v,camera,size)); const sortable=faces.map(face=>{ const pts=face.indices.map(i=>projected[i]).filter(Boolean); if(pts.length!==4) return null; const avgZ=pts.reduce((sum,p)=>sum+p.z,0)/pts.length; return { ...face, pts, avgZ }; }).filter(Boolean).sort((a,b)=>b.avgZ-a.avgZ); sortable.forEach(face=>{ ctx.save(); ctx.beginPath(); ctx.moveTo(face.pts[0].x, face.pts[0].y); face.pts.slice(1).forEach(pt=>ctx.lineTo(pt.x,pt.y)); ctx.closePath(); ctx.fillStyle=face.color; ctx.strokeStyle='rgba(200,220,255,0.18)'; ctx.lineWidth=1; ctx.fill(); ctx.stroke(); ctx.restore(); }); }
+    function drawFrustum(ctx,post,cluster,camera,size,emphasize=false){ const origin=post.camera.position, target=post.camera.target; const direction=normalize(subVec(target, origin)); let left=normalize(cross([0,0,1], direction)); if(norm(left)<1e-5) left=normalize(cross([0,1,0], direction)); const up=normalize(cross(direction, left)); const far=addVec(origin, scaleVec(direction, 3.2)); const halfW=emphasize ? 0.95 : 0.75; const halfH=emphasize ? 0.62 : 0.45; const corners=[ addVec(addVec(far,scaleVec(left,-halfW)), scaleVec(up,halfH)), addVec(addVec(far,scaleVec(left,halfW)), scaleVec(up,halfH)), addVec(addVec(far,scaleVec(left,halfW)), scaleVec(up,-halfH)), addVec(addVec(far,scaleVec(left,-halfW)), scaleVec(up,-halfH)) ]; const o2=projectPoint(origin,camera,size), c2=corners.map(c=>projectPoint(c,camera,size)); if(!o2 || c2.some(pt=>!pt)) return; ctx.save(); ctx.strokeStyle=rgba(cluster.color, emphasize ? 0.9 : 0.45); ctx.fillStyle=rgba(cluster.color, emphasize ? 0.14 : 0.08); ctx.lineWidth=emphasize ? 1.8 : 1.2; ctx.beginPath(); ctx.moveTo(c2[0].x,c2[0].y); c2.slice(1).forEach(pt=>ctx.lineTo(pt.x,pt.y)); ctx.closePath(); ctx.fill(); ctx.stroke(); c2.forEach(pt=>{ ctx.beginPath(); ctx.moveTo(o2.x,o2.y); ctx.lineTo(pt.x,pt.y); ctx.stroke(); }); ctx.restore(); }
+    function renderSpatial(){ const canvas=document.getElementById('spatialCanvas'); const size=resizeCanvas(canvas); const ctx=canvas.getContext('2d'); ctx.setTransform(size.dpr,0,0,size.dpr,0,0); ctx.clearRect(0,0,size.width,size.height); state.hitCameras=[]; const gradient=ctx.createLinearGradient(0,0,0,size.height); gradient.addColorStop(0,'rgba(13,28,49,0.96)'); gradient.addColorStop(1,'rgba(4,11,20,1)'); ctx.fillStyle=gradient; ctx.fillRect(0,0,size.width,size.height); const camera=getViewerCamera(state.view3D); for(let g=-12; g<=12; g+=2){ drawLine3D(ctx,[g,-12,0],[g,12,0],camera,size,{stroke:'rgba(148,163,184,0.10)', width:1}); drawLine3D(ctx,[-12,g,0],[12,g,0],camera,size,{stroke:'rgba(148,163,184,0.10)', width:1}); } [ {center:[0,0,1.25], size:[4.8,4.8,2.5], top:'rgba(168,207,255,0.14)', sideA:'rgba(74,144,226,0.12)', sideB:'rgba(53,88,144,0.18)'}, {center:[0,0,4.05], size:[3.6,3.6,2.0], top:'rgba(181,218,255,0.16)', sideA:'rgba(78,133,209,0.14)', sideB:'rgba(45,71,126,0.22)'}, {center:[0,0,6.35], size:[2.6,2.6,1.7], top:'rgba(197,228,255,0.18)', sideA:'rgba(91,142,220,0.16)', sideB:'rgba(47,77,132,0.22)'}, {center:[0,0,8.15], size:[1.6,1.6,1.2], top:'rgba(211,236,255,0.20)', sideA:'rgba(100,151,229,0.18)', sideB:'rgba(52,82,139,0.24)'} ].forEach(box=>drawBox(ctx,box,camera,size)); drawLine3D(ctx,[0,0,8.75],[0,0,10.6],camera,size,{stroke:'rgba(229,241,255,0.75)', width:1.6}); state.data.clusters.forEach(cluster=>{ const centroid=projectPoint(cluster.cameraCentroid,camera,size); if(!centroid) return; const active=cluster.id===state.selectedClusterId; ctx.save(); ctx.fillStyle=rgba(cluster.color, active ? 0.95 : 0.55); ctx.strokeStyle=active ? '#fff' : rgba(cluster.color,0.42); ctx.lineWidth=active ? 2 : 1.2; ctx.beginPath(); ctx.moveTo(centroid.x, centroid.y-8); ctx.lineTo(centroid.x+8, centroid.y); ctx.lineTo(centroid.x, centroid.y+8); ctx.lineTo(centroid.x-8, centroid.y); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = active ? 'rgba(236,242,255,0.96)' : 'rgba(157,176,202,0.85)'; ctx.font = active ? '600 12px Inter, sans-serif' : '11px Inter, sans-serif'; ctx.fillText(cluster.name, centroid.x+11, centroid.y-10); ctx.restore(); }); state.data.posts.forEach(post=>{ const cluster=getCluster(post.clusterId); const pos2=projectPoint(post.camera.position,camera,size); if(!pos2) return; const selected=post.id===state.selectedPostId; const clusterActive=post.clusterId===state.selectedClusterId; if(clusterActive || selected) drawFrustum(ctx, post, cluster, camera, size, selected); ctx.save(); ctx.globalAlpha = clusterActive || selected ? 1 : 0.42; ctx.fillStyle=cluster.color; ctx.strokeStyle=selected ? '#fff' : rgba(cluster.color,0.82); ctx.lineWidth=selected ? 2.4 : 1.2; ctx.beginPath(); ctx.arc(pos2.x,pos2.y, selected ? 7.2 : 4.7, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore(); state.hitCameras.push({ x:pos2.x, y:pos2.y, r:selected ? 11 : 8, postId: post.id }); }); }
+    function selectCluster(id){ state.selectedClusterId=id; const members=getClusterPosts(id); state.selectedPostId=(members.find(p=>p.representative) || members[0]).id; renderAll(); }
+    function selectPost(id){ const post=getPost(id); state.selectedPostId=id; state.selectedClusterId=post.clusterId; renderAll(); }
+    function focusSelected(){ const cluster=getCluster(state.selectedClusterId); if(!cluster) return; state.view3D.target = cluster.cameraTarget.slice(); renderSpatial(); setStatus(`已聚焦 ${cluster.name} 的空间锚定。`, 'info'); }
+    function reset3D(){ state.view3D={ yaw:0.86, pitch:0.56, distance:25, target:[0,0.2,3.6] }; renderSpatial(); setStatus('已重置 3D 视角。','info'); }
+    function renderGuide(){ document.getElementById('jsonGuide').value = JSON.stringify({ site:'建筑名', summary:'项目简介', clusters:[{ id:'front', name:'正面全景', semanticTag:'经典', description:'...', color:'#64B5F6', heat:0.94, affordance:0.76, cost:2, uncertainty:0.14, location:'主入口前广场', anchor:'中轴线前场', whyImportant:'...', complement:'...', visibleElements:['塔身全貌','基座'], recommendedFor:['首次到访'], cameraCentroid:[0,-9.2,1.7], cameraTarget:[0,0.5,4.2] }], posts:[{ id:'front-1', clusterId:'front', title:'帖子标题', representative:true, caption:'帖子文案', imageEmbedding:[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8], textEmbedding:[0.2,0.1,0.4,0.3,0.6,0.5,0.8,0.7], fusionEmbedding:[0.14,0.16,0.34,0.36,0.54,0.56,0.74,0.76], camera:{ position:[0,-9.2,1.7], target:[0,0.5,4.2] }, visibleElements:['塔身全貌'], social:0.95, uncertainty:0.12, cost:2, thumbnail:'data:image/... or URL', source:'your-source-id' }] }, null, 2); }
+    function renderAll(){ renderSummary(); renderScatter(); renderClusterCards(); renderDetail(); renderSpatial(); renderGuide(); }
+    function importJSON(file){ if(!file) return; const reader=new FileReader(); reader.onload=()=>{ try { const payload=JSON.parse(reader.result); state.data=buildDataset(payload); state.cache={}; state.selectedClusterId=state.data.clusters[0].id; state.selectedPostId=state.data.posts[0].id; renderAll(); setStatus(`已导入 ${state.data.posts.length} 条 posts / ${state.data.clusters.length} 个 clusters。`, 'success'); } catch(err){ console.error(err); setStatus('导入失败：请检查 JSON 结构。', 'warn'); } }; reader.readAsText(file, 'utf-8'); }
+    function bind(){ document.querySelectorAll('#modeTabs .tab').forEach(btn=>btn.onclick=()=>{ state.modality=btn.dataset.mode; renderAll(); setStatus(`已切换到 ${state.modality} embedding 空间。`, 'info'); }); document.getElementById('toggleHullBtn').onclick=()=>{ state.showHull=!state.showHull; renderScatter(); setStatus(state.showHull ? '已开启聚类包络。' : '已关闭聚类包络。', 'info'); }; document.getElementById('reprojectBtn').onclick=()=>{ delete state.cache[state.modality]; renderScatter(); setStatus('已重新计算当前模态投影。', 'info'); }; document.getElementById('focusBtn').onclick=focusSelected; document.getElementById('reset3dBtn').onclick=reset3D; document.getElementById('resetBtn').onclick=()=>{ state.data=buildDataset(sampleData); state.cache={}; state.selectedClusterId=state.data.clusters[0].id; state.selectedPostId=state.data.posts[0].id; state.modality='fusion'; renderAll(); setStatus('已恢复到高保真样例数据。'); }; document.getElementById('loadSampleBtn').onclick=()=>{ state.data=buildDataset(sampleData); state.cache={}; state.selectedClusterId=state.data.clusters[0].id; state.selectedPostId=state.data.posts[0].id; renderAll(); setStatus('已重新加载样例数据。'); }; document.getElementById('importJsonBtn').onclick=()=>document.getElementById('fileInput').click(); document.getElementById('fileInput').addEventListener('change', e=>importJSON(e.target.files[0])); const canvas=document.getElementById('spatialCanvas'); let dragging=false, last={x:0,y:0}; canvas.addEventListener('mousedown', e=>{ dragging=true; last={x:e.clientX,y:e.clientY}; }); window.addEventListener('mouseup', ()=>dragging=false); window.addEventListener('mousemove', e=>{ if(dragging){ const dx=e.clientX-last.x, dy=e.clientY-last.y; last={x:e.clientX,y:e.clientY}; state.view3D.yaw += dx*0.008; state.view3D.pitch = clamp(state.view3D.pitch - dy*0.006, 0.18, 1.2); renderSpatial(); }}); canvas.addEventListener('wheel', e=>{ e.preventDefault(); state.view3D.distance = clamp(state.view3D.distance + e.deltaY*0.01, 15, 40); renderSpatial(); }, {passive:false}); canvas.addEventListener('click', e=>{ const rect=canvas.getBoundingClientRect(); const x=e.clientX-rect.left, y=e.clientY-rect.top; const hit=state.hitCameras.find(item=>((item.x-x)**2 + (item.y-y)**2) <= item.r**2); if(hit){ selectPost(hit.postId); setStatus(`已从空间视图选中 ${getPost(hit.postId).title}。`, 'info'); }}); window.addEventListener('resize', renderSpatial); }
+    state.selectedClusterId=state.data.clusters[0].id; state.selectedPostId=state.data.posts[0].id; bind(); renderAll();
+  </script>
+</body>
+</html>
