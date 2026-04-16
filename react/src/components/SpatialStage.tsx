@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Html, OrbitControls, Splat } from '@react-three/drei';
+import { Html, Line, OrbitControls, Splat } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { Cluster } from '../types';
@@ -8,6 +8,7 @@ import type { Cluster } from '../types';
 interface SpatialStageProps {
   clusters: Cluster[];
   selectedClusterId?: string;
+  compareClusterId?: string;
   onUpdateClusterCamera?: (clusterId: string, camera: CameraSnapshot) => void;
 }
 
@@ -109,36 +110,62 @@ function GroundGrid() {
 function ClusterAnchors({
   clusters,
   selectedClusterId,
+  compareClusterId,
   visible,
   showLabels,
+  showSightLines,
 }: {
   clusters: Cluster[];
   selectedClusterId?: string;
+  compareClusterId?: string;
   visible: boolean;
   showLabels: boolean;
+  showSightLines: boolean;
 }) {
   if (!visible) return null;
+
   return (
     <group>
       {clusters.map((cluster) => {
         const [x, y, z] = cluster.cameraCentroid;
+        const [tx, ty, tz] = cluster.cameraTarget;
         const active = cluster.id === selectedClusterId;
+        const compared = cluster.id === compareClusterId;
+
         return (
-          <group key={cluster.id} position={[x, z, y]}>
-            <mesh rotation={[0, 0, Math.PI / 4]}>
-              <boxGeometry args={[active ? 0.7 : 0.45, active ? 0.7 : 0.45, active ? 0.7 : 0.45]} />
-              <meshStandardMaterial
-                color={cluster.color}
-                emissive={cluster.color}
-                emissiveIntensity={active ? 1.1 : 0.28}
+          <group key={cluster.id}>
+            <group position={[x, z, y]}>
+              <mesh rotation={[0, 0, Math.PI / 4]}>
+                <boxGeometry args={[active ? 0.8 : compared ? 0.64 : 0.45, active ? 0.8 : compared ? 0.64 : 0.45, active ? 0.8 : compared ? 0.64 : 0.45]} />
+                <meshStandardMaterial
+                  color={cluster.color}
+                  emissive={cluster.color}
+                  emissiveIntensity={active ? 1.2 : compared ? 0.8 : 0.28}
+                  transparent
+                  opacity={active ? 0.92 : compared ? 0.82 : 0.55}
+                />
+              </mesh>
+
+              {showLabels ? (
+                <Html distanceFactor={11} position={[0, active ? 1.2 : 0.9, 0]} center>
+                  <div className={`ve-marker-label ${active ? 'active' : ''} ${compared ? 'compare' : ''}`}>
+                    {compared ? `对比 · ${cluster.name}` : cluster.name}
+                  </div>
+                </Html>
+              ) : null}
+            </group>
+
+            {showSightLines ? (
+              <Line
+                points={[
+                  [x, z, y],
+                  [tx, tz, ty],
+                ]}
+                color={compared ? '#7a4e35' : cluster.color}
+                lineWidth={active ? 2.2 : 1.2}
                 transparent
-                opacity={active ? 0.9 : 0.55}
+                opacity={active ? 0.88 : compared ? 0.74 : 0.42}
               />
-            </mesh>
-            {showLabels ? (
-              <Html distanceFactor={11} position={[0, active ? 1.1 : 0.8, 0]} center>
-                <div className={`ve-marker-label ${active ? 'active' : ''}`}>{cluster.name}</div>
-              </Html>
             ) : null}
           </group>
         );
@@ -187,21 +214,33 @@ function formatVector(vector: [number, number, number]) {
   return `[${vector.map((value) => value.toFixed(3)).join(', ')}]`;
 }
 
-export function SpatialStage({ clusters, selectedClusterId, onUpdateClusterCamera }: SpatialStageProps) {
+export function SpatialStage({
+  clusters,
+  selectedClusterId,
+  compareClusterId,
+  onUpdateClusterCamera,
+}: SpatialStageProps) {
   const [modelUrl, setModelUrl] = useState('');
   const [pathInput, setPathInput] = useState('drone/longxiangta/1.splat');
   const [showClusterAnchors, setShowClusterAnchors] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
+  const [showSightLines, setShowSightLines] = useState(true);
   const [autoFocus, setAutoFocus] = useState(true);
   const [liveCamera, setLiveCamera] = useState<CameraSnapshot>({ position: [10, 10, 6], target: [0, 0, 0] });
   const [copied, setCopied] = useState(false);
   const [showCameraDebugger, setShowCameraDebugger] = useState(true);
+
   const fileObjectUrlRef = useRef<string | null>(null);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
 
   const selectedCluster = useMemo(
     () => clusters.find((item) => item.id === selectedClusterId) ?? clusters[0],
     [clusters, selectedClusterId],
+  );
+
+  const compareCluster = useMemo(
+    () => clusters.find((item) => item.id === compareClusterId),
+    [clusters, compareClusterId],
   );
 
   const targetCamera = useMemo<CameraSnapshot | null>(() => {
@@ -282,6 +321,9 @@ export function SpatialStage({ clusters, selectedClusterId, onUpdateClusterCamer
         <button type="button" className={`ve-toggle-button ${showLabels ? 'active' : ''}`} onClick={() => setShowLabels((v) => !v)}>
           标签
         </button>
+        <button type="button" className={`ve-toggle-button ${showSightLines ? 'active' : ''}`} onClick={() => setShowSightLines((v) => !v)}>
+          视线
+        </button>
         <button type="button" className={`ve-toggle-button ${autoFocus ? 'active' : ''}`} onClick={() => setAutoFocus((v) => !v)}>
           自动聚焦
         </button>
@@ -293,7 +335,10 @@ export function SpatialStage({ clusters, selectedClusterId, onUpdateClusterCamer
       <div className="ve-stage-canvas-wrap refined heritage viewpoint-only">
         <div className="ve-stage-hud heritage">
           <div className="ve-stage-hud-title">{selectedCluster?.name ?? '未选择 viewpoint'}</div>
-          <div className="ve-stage-hud-sub">{selectedCluster?.location ?? '未绑定空间标签'} · viewpoint-only</div>
+          <div className="ve-stage-hud-sub">
+            {selectedCluster?.location ?? '未绑定空间标签'}
+            {compareCluster ? ` · 对比 ${compareCluster.name}` : ''}
+          </div>
         </div>
 
         {showCameraDebugger ? (
@@ -351,18 +396,29 @@ export function SpatialStage({ clusters, selectedClusterId, onUpdateClusterCamer
           <GroundGrid />
           <ModelContent modelUrl={modelUrl} />
           <ClusterAnchors
-            clusters={clusters}
+            clusters={clusters.filter((item) => item.id === selectedClusterId || item.id === compareClusterId || showClusterAnchors)}
             selectedClusterId={selectedClusterId}
+            compareClusterId={compareClusterId}
             visible={showClusterAnchors}
             showLabels={showLabels}
+            showSightLines={showSightLines}
           />
           <SmoothCameraRig selectedCluster={selectedCluster} autoFocus={autoFocus} controlsRef={controlsRef} />
           <CameraObserver controlsRef={controlsRef} onCameraChange={setLiveCamera} />
-          <OrbitControls ref={controlsRef} makeDefault enablePan enableDamping dampingFactor={0.08} minDistance={2} maxDistance={80} onStart={() => setAutoFocus(false)} />
+          <OrbitControls
+            ref={controlsRef}
+            makeDefault
+            enablePan
+            enableDamping
+            dampingFactor={0.08}
+            minDistance={2}
+            maxDistance={80}
+            onStart={() => setAutoFocus(false)}
+          />
         </Canvas>
 
         <div className="ve-stage-note heritage">
-          当前前端仅保留 viewpoint 层操作：先打开模型，自由拖动到满意视角；右侧会实时读取当前位置与朝向；确认后点击“保存为该 viewpoint 默认视角”即可直接写回数据。
+          当前前端已经切成 viewpoint 分析模式：左侧通过 cluster 发现候选视角，中间在 3DGS 中验证机位，右侧切换 Overview / Evidence / Compare / Debug 做解释与对比。
         </div>
       </div>
     </div>

@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { sampleData } from './data/sampleData';
 import type { Cluster, ViewpointDataset } from './types';
 import { ClusterCard } from './components/ClusterCard';
-import { DetailPanel } from './components/DetailPanel';
 import { JsonImporter } from './components/JsonImporter';
 import { SpatialStage } from './components/SpatialStage';
+import { LandscapeMap } from './components/LandscapeMap';
+import { DetailTabs, type DetailTabKey } from './components/DetailTabs';
 
 type FilterKey = 'all' | 'classic' | 'undervalued' | 'entry' | 'detail';
 
@@ -35,12 +36,14 @@ function matchesSelectableFilters(cluster: Cluster, semanticTag: string, locatio
 export default function App() {
   const [data, setData] = useState<ViewpointDataset>(sampleData);
   const [selectedClusterId, setSelectedClusterId] = useState(sampleData.clusters[0]?.id ?? '');
+  const [compareClusterId, setCompareClusterId] = useState<string>('');
   const [showJson, setShowJson] = useState(false);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [hoveredClusterId, setHoveredClusterId] = useState(sampleData.clusters[0]?.id ?? '');
   const [selectedSemanticTag, setSelectedSemanticTag] = useState<string>('all');
   const [selectedLocation, setSelectedLocation] = useState<string>('all');
   const [selectedAudience, setSelectedAudience] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<DetailTabKey>('overview');
 
   const selectableOptions = useMemo(() => {
     const semanticTags = Array.from(new Set(data.clusters.map((item) => item.semanticTag)));
@@ -62,6 +65,12 @@ export default function App() {
     }
   }, [data.clusters, filteredClusters, selectedClusterId]);
 
+  useEffect(() => {
+    if (compareClusterId && compareClusterId === selectedClusterId) {
+      setCompareClusterId('');
+    }
+  }, [compareClusterId, selectedClusterId]);
+
   const selectedCluster = useMemo(
     () => data.clusters.find((item) => item.id === selectedClusterId) ?? filteredClusters[0] ?? data.clusters[0],
     [data.clusters, filteredClusters, selectedClusterId],
@@ -70,6 +79,21 @@ export default function App() {
   const hoveredCluster = useMemo(
     () => data.clusters.find((item) => item.id === hoveredClusterId) ?? selectedCluster,
     [data.clusters, hoveredClusterId, selectedCluster],
+  );
+
+  const compareCluster = useMemo(
+    () => data.clusters.find((item) => item.id === compareClusterId),
+    [compareClusterId, data.clusters],
+  );
+
+  const selectedPosts = useMemo(
+    () => data.posts.filter((item) => item.clusterId === selectedCluster?.id),
+    [data.posts, selectedCluster],
+  );
+
+  const comparePosts = useMemo(
+    () => data.posts.filter((item) => item.clusterId === compareCluster?.id),
+    [data.posts, compareCluster],
   );
 
   const stats = useMemo(() => {
@@ -84,13 +108,18 @@ export default function App() {
     setData(nextData);
     setSelectedClusterId(nextData.clusters[0]?.id ?? '');
     setHoveredClusterId(nextData.clusters[0]?.id ?? '');
+    setCompareClusterId('');
     setFilter('all');
     setSelectedSemanticTag('all');
     setSelectedLocation('all');
     setSelectedAudience('all');
+    setActiveTab('overview');
   };
 
-  const handleUpdateClusterCamera = (clusterId: string, camera: { position: [number, number, number]; target: [number, number, number] }) => {
+  const handleUpdateClusterCamera = (
+    clusterId: string,
+    camera: { position: [number, number, number]; target: [number, number, number] },
+  ) => {
     setData((current) => ({
       ...current,
       clusters: current.clusters.map((cluster) => (
@@ -129,13 +158,22 @@ export default function App() {
           <div className="ve-kicker">Heritage Viewpoint Explorer</div>
           <div className="ve-title-row compact">
             <h1>{data.site}</h1>
-            <span className="ve-badge">Workbench</span>
-            <span className="ve-badge soft">{data.clusters.length} viewpoints</span>
-            <span className="ve-badge soft">viewpoint-only analysis</span>
+            <span className="ve-badge">Viewpoint Explorer</span>
+            <span className="ve-badge soft">{data.clusters.length} clusters</span>
+            <span className="ve-badge soft">{data.posts.length} evidence images</span>
           </div>
         </div>
 
         <div className="ve-toolbar-group">
+          <button type="button" className="ve-button" onClick={() => setActiveTab('overview')}>
+            Explore
+          </button>
+          <button type="button" className="ve-button" onClick={() => setActiveTab('compare')}>
+            Compare
+          </button>
+          <button type="button" className="ve-button" onClick={() => setActiveTab('debug')}>
+            Debug
+          </button>
           <button type="button" className="ve-button" onClick={() => setShowJson((v) => !v)}>
             {showJson ? '收起 schema' : '查看 schema'}
           </button>
@@ -146,22 +184,22 @@ export default function App() {
         </div>
       </header>
 
-      <main className="ve-shell refined">
-        <aside className="ve-sidebar refined">
+      <main className="ve-shell refined ve-shell-stage-bottom">
+        <aside className="ve-sidebar refined ve-sidebar-wide">
           <section className="ve-panel ve-candidates-panel refined split-layout">
             <div className="ve-sidebar-top">
               <div className="ve-panel-head compact with-border">
                 <div>
-                  <div className="ve-section-kicker">Viewpoint candidates</div>
+                  <div className="ve-section-kicker">Viewpoint discovery</div>
                   <h2>候选导航器</h2>
-                  <p>上方先按研究意图筛选，下方只保留 viewpoint 预览图与名称进行快速浏览。</p>
+                  <p>先按研究意图筛选，再结合聚类地形图挑选 viewpoint。</p>
                 </div>
               </div>
 
               <section className="ve-selector-panel">
                 <div className="ve-selector-title-row">
-                  <strong>用户可选内容</strong>
-                  <span>{filteredClusters.length} / {data.clusters.length} 个 viewpoint</span>
+                  <strong>Viewing intent</strong>
+                  <span>{filteredClusters.length} / {data.clusters.length}</span>
                 </div>
 
                 <div className="ve-filter-row major">
@@ -204,6 +242,33 @@ export default function App() {
                   ))}
                 </div>
               </section>
+
+              <section className="ve-landscape-block">
+                <div className="ve-section-subhead">
+                  <div>
+                    <div className="ve-section-kicker">Viewpoint landscape</div>
+                    <h3>聚类地形图</h3>
+                  </div>
+                  <span className="ve-badge soft">Shift + 点击加入对比</span>
+                </div>
+
+                <LandscapeMap
+                  clusters={filteredClusters}
+                  selectedClusterId={selectedCluster?.id}
+                  compareClusterId={compareCluster?.id}
+                  hoveredClusterId={hoveredCluster?.id}
+                  onHover={setHoveredClusterId}
+                  onSelect={(clusterId) => {
+                    setSelectedClusterId(clusterId);
+                    setActiveTab('overview');
+                  }}
+                  onCompareSelect={(clusterId) => {
+                    if (clusterId === selectedCluster?.id) return;
+                    setCompareClusterId(clusterId);
+                    setActiveTab('compare');
+                  }}
+                />
+              </section>
             </div>
 
             <section className="ve-card-panel">
@@ -223,6 +288,7 @@ export default function App() {
                     active={cluster.id === selectedCluster?.id}
                     onClick={() => {
                       setSelectedClusterId(cluster.id);
+                      setActiveTab('overview');
                     }}
                     onHover={() => setHoveredClusterId(cluster.id)}
                     size="large"
@@ -252,7 +318,7 @@ export default function App() {
           </section>
         </aside>
 
-        <section className="ve-workspace refined">
+        <section className="ve-main-column">
           <section className="ve-panel ve-stage-panel hero-stage">
             <div className="ve-panel-head stage-head compact-stage">
               <div>
@@ -265,24 +331,39 @@ export default function App() {
                 <span className="ve-badge soft">热度 {Math.round((selectedCluster?.heat ?? 0) * 100)}</span>
                 <span className="ve-badge soft">收益 {Math.round((selectedCluster?.affordance ?? 0) * 100)}</span>
                 <span className="ve-badge soft">成本 {selectedCluster?.cost}m</span>
+                {compareCluster ? <span className="ve-badge soft">对比 {compareCluster.name}</span> : null}
               </div>
             </div>
+
             <SpatialStage
               clusters={data.clusters}
               selectedClusterId={selectedCluster?.id}
+              compareClusterId={compareCluster?.id}
               onUpdateClusterCamera={handleUpdateClusterCamera}
             />
           </section>
 
-          <section className="ve-panel ve-detail-panel-wrap refined">
+          <section className="ve-panel ve-detail-below-stage refined">
             <div className="ve-panel-head compact with-border">
               <div>
                 <div className="ve-section-kicker">Viewpoint detail</div>
                 <h2>证据解释器</h2>
-                <p>仅围绕 viewpoint 的摘要、证据、指标与空间锚定组织信息。</p>
+                <p>围绕 viewpoint 的摘要、证据、比较与调试组织信息。</p>
               </div>
             </div>
-            {selectedCluster ? <DetailPanel cluster={selectedCluster} /> : null}
+
+            {selectedCluster ? (
+              <DetailTabs
+                cluster={selectedCluster}
+                posts={selectedPosts}
+                compareCluster={compareCluster}
+                comparePosts={comparePosts}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                onSelectCompare={setCompareClusterId}
+                compareOptions={data.clusters.filter((item) => item.id !== selectedCluster.id)}
+              />
+            ) : null}
           </section>
 
           {showJson ? (
@@ -291,7 +372,7 @@ export default function App() {
                 <div>
                   <div className="ve-section-kicker">Data schema</div>
                   <h2>当前 JSON</h2>
-                  <p>仍兼容 posts 字段，但前端界面不再直接展示 post 内容。</p>
+                  <p>仍兼容 posts 字段，前端重点转为 viewpoint 分析。</p>
                 </div>
               </div>
               <pre className="ve-json-block">{JSON.stringify(data, null, 2)}</pre>

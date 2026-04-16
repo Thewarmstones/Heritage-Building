@@ -717,3 +717,329 @@ html, body, #root {
 .ve-debug-fab:hover {
   background: rgba(245, 237, 224, 0.98);
 }
+
+.ve-shell-three-col {
+  grid-template-columns: 320px minmax(0, 1fr) 420px;
+}
+
+.ve-detail-column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.ve-landscape-block {
+  padding: 0 14px 14px;
+}
+
+.ve-landscape-map-shell {
+  margin-top: 10px;
+}
+
+.ve-landscape-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(118, 97, 71, 0.12);
+  background: linear-gradient(180deg, rgba(252, 247, 239, 0.72), rgba(245, 236, 223, 0.82));
+}
+
+.ve-landscape-node {
+  cursor: pointer;
+  transition: transform 160ms ease;
+}
+
+.ve-landscape-node:hover {
+  transform: scale(1.02);
+}
+
+.ve-landscape-label {
+  font-size: 11px;
+  fill: #6f5d48;
+  font-weight: 600;
+}
+
+.ve-landscape-label.active {
+  fill: #4c3822;
+}
+
+.ve-landscape-legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.ve-tabs-head {
+  display: flex;
+  gap: 8px;
+  padding: 16px 18px 0;
+  flex-wrap: wrap;
+}
+
+.ve-tab-button {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(118, 97, 71, 0.14);
+  background: rgba(255, 251, 245, 0.76);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.ve-tab-button.active {
+  color: #fff9f0;
+  background: linear-gradient(180deg, rgba(152, 118, 82, 0.94), rgba(121, 88, 58, 0.94));
+  border-color: rgba(121, 88, 58, 0.92);
+}
+
+.ve-tab-panel {
+  padding-top: 14px;
+}
+
+.ve-post-strip-scroll {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 300px;
+  overflow: auto;
+}
+
+.ve-matrix-wrap {
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(118, 97, 71, 0.10);
+  background: rgba(250, 244, 235, 0.55);
+}
+
+.ve-matrix-grid {
+  display: grid;
+  min-width: 100%;
+}
+
+.ve-matrix-cell {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(118, 97, 71, 0.08);
+  border-bottom: 1px solid rgba(118, 97, 71, 0.08);
+  font-size: 12px;
+}
+
+.ve-matrix-cell.head {
+  font-weight: 700;
+  color: var(--muted);
+  background: rgba(248, 241, 230, 0.7);
+}
+
+.ve-matrix-cell.label {
+  justify-content: flex-start;
+  padding: 0 12px;
+  color: var(--text);
+  font-weight: 600;
+  background: rgba(252, 247, 239, 0.72);
+}
+
+.ve-matrix-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(147, 113, 77, 0.96), rgba(118, 85, 56, 0.96));
+}
+
+.ve-matrix-empty {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(118, 97, 71, 0.10);
+}
+
+.ve-compare-copy {
+  margin: 0 0 14px;
+  line-height: 1.8;
+  color: var(--text);
+}
+
+.ve-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.ve-compare-col {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(250, 244, 234, 0.72);
+  border: 1px solid rgba(118, 97, 71, 0.10);
+}
+
+.ve-compare-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.ve-compare-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px dashed rgba(118, 97, 71, 0.10);
+}
+
+.ve-compare-item:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.ve-compare-item span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ve-compare-item strong {
+  color: var(--text);
+  font-size: 13px;
+  text-align: right;
+}
+
+.ve-filter-row.no-pad {
+  padding: 0;
+}
+
+.ve-marker-label.compare {
+  border-color: rgba(122, 78, 53, 0.26);
+  background: rgba(251, 244, 237, 0.96);
+}
+
+@media (max-width: 1680px) {
+  .ve-shell-three-col {
+    grid-template-columns: 300px minmax(0, 1fr) 380px;
+  }
+}
+
+@media (max-width: 1480px) {
+  .ve-shell-three-col {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .ve-detail-column {
+    grid-column: 1 / -1;
+  }
+}
+.ve-shell-stage-bottom {
+  display: grid;
+  grid-template-columns: 420px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.ve-sidebar-wide {
+  min-width: 0;
+}
+
+.ve-main-column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.ve-detail-below-stage {
+  min-width: 0;
+}
+
+.ve-landscape-map-shell {
+  margin-top: 10px;
+}
+
+.ve-landscape-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(118, 97, 71, 0.14);
+  background: linear-gradient(180deg, rgba(252, 247, 239, 0.92), rgba(245, 236, 223, 0.92));
+}
+
+.ve-axis-grid {
+  stroke: rgba(118, 97, 71, 0.10);
+  stroke-width: 1;
+}
+
+.ve-axis-line {
+  stroke: rgba(95, 72, 48, 0.85);
+  stroke-width: 1.8;
+}
+
+.ve-axis-tick {
+  stroke: rgba(95, 72, 48, 0.75);
+  stroke-width: 1.2;
+}
+
+.ve-axis-label {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #5f4830;
+}
+
+.ve-axis-tick-label {
+  font-size: 10px;
+  font-weight: 600;
+  fill: #7d6954;
+}
+
+.ve-landscape-node {
+  cursor: pointer;
+}
+
+.ve-landscape-label {
+  font-size: 11px;
+  fill: #5b4733;
+  font-weight: 700;
+}
+
+.ve-landscape-label.active {
+  fill: #3f2f21;
+}
+
+.ve-landscape-legend.strong {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6a5744;
+}
+
+.ve-cluster-list.refined.gallery {
+  gap: 14px;
+}
+
+.ve-candidates-panel.refined.split-layout {
+  min-height: 820px;
+}
+
+.ve-stage-panel.hero-stage {
+  min-height: 640px;
+}
+
+.ve-detail-below-stage .ve-tabs-head {
+  padding-top: 12px;
+}
+
+@media (max-width: 1600px) {
+  .ve-shell-stage-bottom {
+    grid-template-columns: 380px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1380px) {
+  .ve-shell-stage-bottom {
+    grid-template-columns: 1fr;
+  }
+}
